@@ -11,19 +11,40 @@ public class Trigger : MonoBehaviour
 
     public string animationTriggerName; 
 
+    public void SetTagFilter(string requiredTag)
+    {
+        tagFilter = requiredTag;
+    }
+
     void OnTriggerEnter(Collider other)
     {
-        if (!string.IsNullOrEmpty(tagFilter) && !other.CompareTag(tagFilter)) return;
+        if (!MatchesTagFilter(other)) return;
+
         Debug.Log("player entered: " + gameObject.name);
-        animator.SetTrigger(animationTriggerName);
+        if (animator != null && !string.IsNullOrEmpty(animationTriggerName))
+        {
+            animator.SetTrigger(animationTriggerName);
+        }
+
         onTriggerEnter.Invoke();
     }
 
     void OnTriggerExit(Collider other)
     {
-        if (!string.IsNullOrEmpty(tagFilter) && !other.CompareTag(tagFilter)) return;
+        if (!MatchesTagFilter(other)) return;
+
         Debug.Log("player exited: " + gameObject.name);
         onTriggerExit.Invoke();
+    }
+
+    bool MatchesTagFilter(Collider other)
+    {
+        if (string.IsNullOrEmpty(tagFilter))
+        {
+            return true;
+        }
+
+        return other.CompareTag(tagFilter) || other.transform.root.CompareTag(tagFilter);
     }
 }
 

@@ -10,6 +10,8 @@ public class PathRecorder : MonoBehaviour
     [SerializeField] Transform target;
     [SerializeField, Min(0.02f)] float sampleInterval = 0.5f;
     [SerializeField] bool recordOnStart = true;
+    [SerializeField] bool exportOnApplicationPause = true;
+    [SerializeField] bool exportOnApplicationQuit = true;
     [SerializeField] KeyCode toggleRecordingKey = KeyCode.R;
     [SerializeField] KeyCode exportKey = KeyCode.P;
     [SerializeField] string filePrefix = "path_recording";
@@ -18,6 +20,7 @@ public class PathRecorder : MonoBehaviour
     readonly List<PathSample> samples = new List<PathSample>();
     float nextSampleTime;
     bool isRecording;
+    int exportedSampleCount;
 
     public bool IsRecording => isRecording;
     public int SampleCount => samples.Count;
@@ -85,6 +88,7 @@ public class PathRecorder : MonoBehaviour
     public void ClearSamples()
     {
         samples.Clear();
+        exportedSampleCount = 0;
     }
 
     public string ExportCsv()
@@ -120,15 +124,54 @@ public class PathRecorder : MonoBehaviour
         }
 
         File.WriteAllText(path, csv.ToString(), Encoding.UTF8);
+        exportedSampleCount = samples.Count;
         Debug.Log($"PathRecorder exported {samples.Count} samples to: {path}");
         return path;
     }
 
     string GetExportDirectory()
     {
+#if UNITY_ANDROID && !UNITY_EDITOR
+        return Application.persistentDataPath;
+#else
         return string.IsNullOrWhiteSpace(exportDirectory)
             ? Application.persistentDataPath
             : exportDirectory;
+#endif
+    }
+
+    void OnApplicationPause(bool pauseStatus)
+    {
+        if (pauseStatus)
+        {
+            if (exportOnApplicationPause)
+            {
+                ExportIfNeeded();
+            }
+
+            return;
+        }
+
+        if (recordOnStart)
+        {
+            StartRecording();
+        }
+    }
+
+    void OnApplicationQuit()
+    {
+        if (exportOnApplicationQuit)
+        {
+            ExportIfNeeded();
+        }
+    }
+
+    void ExportIfNeeded()
+    {
+        if (samples.Count > exportedSampleCount)
+        {
+            ExportCsv();
+        }
     }
 
     void RecordSample()
