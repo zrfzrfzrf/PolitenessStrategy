@@ -105,7 +105,7 @@
       "url": "https://packages.unity.com"
     },
     "com.soupday.cc3_unity_tools": {
-      "version": "file:C:/cc_unity_tools_URP-1.6.3.URP14",
+      "version": "file:../cc_unity_tools_URP-1.6.3.URP14",
       "depth": 0,
       "source": "local",
       "dependencies": {

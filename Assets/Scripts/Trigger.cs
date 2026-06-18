@@ -14,7 +14,7 @@ public class Trigger : MonoBehaviour
     void OnTriggerEnter(Collider other)
     {
         if (!string.IsNullOrEmpty(tagFilter) && !other.CompareTag(tagFilter)) return;
-
+        Debug.Log("player entered: " + gameObject.name);
         animator.SetTrigger(animationTriggerName);
         onTriggerEnter.Invoke();
     }
@@ -22,7 +22,7 @@ public class Trigger : MonoBehaviour
     void OnTriggerExit(Collider other)
     {
         if (!string.IsNullOrEmpty(tagFilter) && !other.CompareTag(tagFilter)) return;
-
+        Debug.Log("player exited: " + gameObject.name);
         onTriggerExit.Invoke();
     }
 }
