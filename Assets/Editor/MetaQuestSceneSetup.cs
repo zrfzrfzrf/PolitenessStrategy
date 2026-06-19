@@ -11,6 +11,7 @@ public static class MetaQuestSceneSetup
     const string VrRigName = "OVRCameraRigInteraction";
     const string CenterEyeName = "CenterEyeAnchor";
     const string LegacyKeyboardPlayerName = "Keyboard Test Player";
+    const string KeyboardTestPlayerName = "player_for_keyboard_test";
 
     [InitializeOnLoadMethod]
     static void ConfigureOpenSceneAfterCompile()
@@ -36,19 +37,55 @@ public static class MetaQuestSceneSetup
 
     static void ConfigureActiveScene()
     {
-        GameObject keyboardPlayer = GameObject.Find(LegacyKeyboardPlayerName);
-        if (keyboardPlayer != null)
+        GameObject legacyKeyboardPlayer = GameObject.Find(LegacyKeyboardPlayerName);
+        if (legacyKeyboardPlayer != null)
         {
-            Object.DestroyImmediate(keyboardPlayer);
+            Object.DestroyImmediate(legacyKeyboardPlayer);
         }
 
         GameObject vrRig = GameObject.Find(VrRigName);
-        if (vrRig == null)
+        if (vrRig != null)
         {
-            Debug.LogError($"Could not find {VrRigName} in {ScenePath}.");
-            return;
+            ConfigureVrRig(vrRig);
+        }
+        else
+        {
+            Debug.LogWarning($"Could not find {VrRigName} in {ScenePath}.");
         }
 
+        GameObject keyboardPlayer = GameObject.Find(KeyboardTestPlayerName);
+        if (keyboardPlayer != null)
+        {
+            ConfigureKeyboardTestPlayer(keyboardPlayer);
+        }
+
+        foreach (Trigger trigger in Object.FindObjectsOfType<Trigger>(true))
+        {
+            SerializedObject serializedTrigger = new SerializedObject(trigger);
+            SerializedProperty tagFilter = serializedTrigger.FindProperty("tagFilter");
+            tagFilter.stringValue = "Player";
+            serializedTrigger.ApplyModifiedProperties();
+        }
+
+        if (vrRig != null)
+        {
+            EditorUtility.SetDirty(vrRig);
+        }
+
+        if (keyboardPlayer != null)
+        {
+            EditorUtility.SetDirty(keyboardPlayer);
+        }
+
+        EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
+        EditorSceneManager.SaveScene(SceneManager.GetActiveScene());
+
+        Debug.Log(
+            $"Configured route tracking: VR rig={(vrRig != null ? VrRigName : "missing")}, keyboard test player={(keyboardPlayer != null ? KeyboardTestPlayerName : "missing")}, trigger filters use Player.");
+    }
+
+    static void ConfigureVrRig(GameObject vrRig)
+    {
         if (InternalEditorUtility.tags.Contains("Player"))
         {
             vrRig.tag = "Player";
@@ -77,20 +114,43 @@ public static class MetaQuestSceneSetup
             rigidbody.useGravity = false;
             rigidbody.isKinematic = true;
         }
+    }
 
-        foreach (Trigger trigger in Object.FindObjectsOfType<Trigger>(true))
+    static void ConfigureKeyboardTestPlayer(GameObject keyboardPlayer)
+    {
+        if (InternalEditorUtility.tags.Contains("Player"))
         {
-            SerializedObject serializedTrigger = new SerializedObject(trigger);
-            SerializedProperty tagFilter = serializedTrigger.FindProperty("tagFilter");
-            tagFilter.stringValue = "Player";
-            serializedTrigger.ApplyModifiedProperties();
+            keyboardPlayer.tag = "Player";
         }
 
-        EditorUtility.SetDirty(vrRig);
-        EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
-        EditorSceneManager.SaveScene(SceneManager.GetActiveScene());
+        CharacterController characterController = keyboardPlayer.GetComponent<CharacterController>();
+        if (characterController == null)
+        {
+            characterController = keyboardPlayer.AddComponent<CharacterController>();
+            characterController.height = 2f;
+            characterController.radius = 0.5f;
+            characterController.center = new Vector3(0f, 1f, 0f);
+        }
 
-        Debug.Log($"Configured {VrRigName}: route target is {CenterEyeName}; trigger filters use Player; keyboard player removed.");
+        CapsuleCollider capsuleCollider = keyboardPlayer.GetComponent<CapsuleCollider>();
+        if (capsuleCollider != null)
+        {
+            capsuleCollider.enabled = false;
+        }
+
+        KeyboardPlayerController movement = keyboardPlayer.GetComponent<KeyboardPlayerController>();
+        if (movement != null && Camera.main != null)
+        {
+            movement.SetDirectionReference(Camera.main.transform);
+        }
+
+        PathRecorder recorder = keyboardPlayer.GetComponent<PathRecorder>();
+        if (recorder == null)
+        {
+            recorder = keyboardPlayer.AddComponent<PathRecorder>();
+        }
+
+        SetObjectReference(recorder, "target", keyboardPlayer.transform);
     }
 
     static void SetObjectReference(Object target, string propertyName, Object value)

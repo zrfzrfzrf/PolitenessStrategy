@@ -7,7 +7,7 @@ public class Trigger : MonoBehaviour
     [SerializeField] string tagFilter;
     [SerializeField] UnityEvent onTriggerEnter;
     [SerializeField] UnityEvent onTriggerExit;
-    [SerializeField] Animator animator; 
+    [SerializeField] Animator animator;
 
     public string animationTriggerName; 
 

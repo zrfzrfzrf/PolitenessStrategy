@@ -392,15 +392,39 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 96ffcc4d91214be4589e7a106dc03f0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagFilter: 
+  tagFilter: Player
   onTriggerEnter:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1624540773}
+        m_TargetAssemblyTypeName: CamilaAttitudeController, Assembly-CSharp
+        m_MethodName: OnPlayerEnterC
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   onTriggerExit:
     m_PersistentCalls:
-      m_Calls: []
-  animator: {fileID: 1624540772}
-  animationTriggerName: startAnimation
+      m_Calls:
+      - m_Target: {fileID: 1624540773}
+        m_TargetAssemblyTypeName: CamilaAttitudeController, Assembly-CSharp
+        m_MethodName: OnPlayerExitC
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  animator: {fileID: 0}
+  animationTriggerName: 
 --- !u!4 &213719826
 Transform:
   m_ObjectHideFlags: 0
@@ -1785,6 +1809,180 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 1276511596}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1069966427
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1069966431}
+  - component: {fileID: 1069966430}
+  - component: {fileID: 1069966429}
+  - component: {fileID: 1069966428}
+  - component: {fileID: 1069966432}
+  - component: {fileID: 1069966433}
+  - component: {fileID: 1069966434}
+  m_Layer: 0
+  m_Name: player_for_keyboard_test
+  m_TagString: Player
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!136 &1069966428
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1069966427}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 0
+  serializedVersion: 2
+  m_Radius: 0.5
+  m_Height: 2
+  m_Direction: 1
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!23 &1069966429
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1069966427}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1069966430
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1069966427}
+  m_Mesh: {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!4 &1069966431
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1069966427}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.06441149, y: 0, z: 1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1069966432
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1069966427}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e14166ca5e29b264db8f3b96f7f41d80, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enableKeyboardControl: 1
+  moveSpeed: 2
+  verticalSpeed: 1.2
+  turnSpeed: 90
+  directionReference: {fileID: 878724900}
+--- !u!143 &1069966433
+CharacterController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1069966427}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Height: 2
+  m_Radius: 0.5
+  m_SlopeLimit: 45
+  m_StepOffset: 0.3
+  m_SkinWidth: 0.08
+  m_MinMoveDistance: 0.001
+  m_Center: {x: 0, y: 1, z: 0}
+--- !u!114 &1069966434
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1069966427}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 19a07321a2f4d684c9000f098cdda1c1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  target: {fileID: 1069966431}
+  sampleInterval: 0.5
+  recordOnStart: 1
+  exportOnApplicationPause: 1
+  exportOnApplicationQuit: 1
+  toggleRecordingKey: 114
+  exportKey: 112
+  filePrefix: path_recording
+  exportDirectory: D:\KTH\SummerIntern\Dataset
 --- !u!4 &1079186462 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 404438120665053026, guid: 22232744aa297864d80e18a5d59bbdb2,
@@ -5189,7 +5387,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 96ffcc4d91214be4589e7a106dc03f0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagFilter: 
+  tagFilter: Player
   onTriggerEnter:
     m_PersistentCalls:
       m_Calls: []
@@ -5305,15 +5503,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 96ffcc4d91214be4589e7a106dc03f0d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tagFilter: 
+  tagFilter: Player
   onTriggerEnter:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1624540773}
+        m_TargetAssemblyTypeName: CamilaAttitudeController, Assembly-CSharp
+        m_MethodName: OnPlayerEnterF
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   onTriggerExit:
     m_PersistentCalls:
       m_Calls: []
-  animator: {fileID: 1624540772}
-  animationTriggerName: startAnimation
+  animator: {fileID: 0}
+  animationTriggerName: 
 --- !u!4 &1337741319
 Transform:
   m_ObjectHideFlags: 0
@@ -5902,7 +6112,7 @@ PrefabInstance:
     - target: {fileID: 2514675399181695721, guid: f54012181eacade4ea242c65f804720f,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: 1.5
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2514675399181695721, guid: f54012181eacade4ea242c65f804720f,
         type: 3}
@@ -6543,6 +6753,25 @@ Animator:
     type: 3}
   m_PrefabInstance: {fileID: 1949056327}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1624540773
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1624540764}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55e4f7454be9a824f87d32f0f4f421f9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  stayAtCTimeoutSeconds: 8
+  sceneReloadDelaySeconds: 2
+  animator: {fileID: 1624540772}
+  enableResponses: 1
+  onStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &1628502110 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 2483171112401766342, guid: f54012181eacade4ea242c65f804720f,
@@ -7169,6 +7398,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 1624540768}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 0001b2b57b525c04fa122b3408c1eda0,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1624540773}
   m_SourcePrefab: {fileID: 100100000, guid: 0001b2b57b525c04fa122b3408c1eda0, type: 3}
 --- !u!1 &1962344646
 GameObject:
@@ -7650,3 +7883,4 @@ SceneRoots:
   - {fileID: 1337741319}
   - {fileID: 1495803541}
   - {fileID: 1571129010}
+  - {fileID: 1069966431}

@@ -6,23 +6,53 @@ public static class MetaQuestRouteBootstrap
     const string VrRigName = "OVRCameraRigInteraction";
     const string CenterEyeName = "CenterEyeAnchor";
     const string LegacyKeyboardPlayerName = "Keyboard Test Player";
+    const string KeyboardTestPlayerName = "player_for_keyboard_test";
+
+    static Vector3 keyboardPlayerSpawnPosition;
+    static Quaternion keyboardPlayerSpawnRotation;
+    static bool hasKeyboardPlayerSpawn;
+
+    public static void ResetKeyboardPlayerSpawnCache()
+    {
+        hasKeyboardPlayerSpawn = false;
+    }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-    static void ConfigureVrTracking()
+    static void ConfigureRouteTracking()
     {
-        GameObject keyboardPlayer = GameObject.Find(LegacyKeyboardPlayerName);
-        if (keyboardPlayer != null)
+        GameObject legacyKeyboardPlayer = GameObject.Find(LegacyKeyboardPlayerName);
+        if (legacyKeyboardPlayer != null)
         {
-            Object.Destroy(keyboardPlayer);
+            Object.Destroy(legacyKeyboardPlayer);
+        }
+
+        foreach (Trigger trigger in Object.FindObjectsOfType<Trigger>(true))
+        {
+            trigger.SetTagFilter("Player");
         }
 
         GameObject vrRig = GameObject.Find(VrRigName);
-        if (vrRig == null)
+        GameObject keyboardPlayer = GameObject.Find(KeyboardTestPlayerName);
+
+        if (vrRig != null)
         {
-            Debug.LogError($"Could not find {VrRigName}; route tracking was not configured.");
-            return;
+            ConfigureVrRig(vrRig);
         }
 
+        if (keyboardPlayer != null)
+        {
+            ConfigureKeyboardTestPlayer(keyboardPlayer);
+        }
+
+        if (vrRig == null && keyboardPlayer == null)
+        {
+            Debug.LogError(
+                $"Could not find {VrRigName} or {KeyboardTestPlayerName}; route tracking was not configured.");
+        }
+    }
+
+    static void ConfigureVrRig(GameObject vrRig)
+    {
         vrRig.tag = "Player";
 
         Transform centerEye = vrRig.GetComponentsInChildren<Transform>(true)
@@ -49,11 +79,68 @@ public static class MetaQuestRouteBootstrap
             rigidbody.isKinematic = true;
         }
 
-        foreach (Trigger trigger in Object.FindObjectsOfType<Trigger>(true))
+        Debug.Log($"Meta Quest route tracking configured on {VrRigName}; target is {CenterEyeName}.");
+    }
+
+    static void ConfigureKeyboardTestPlayer(GameObject keyboardPlayer)
+    {
+        keyboardPlayer.tag = "Player";
+
+        CharacterController characterController = keyboardPlayer.GetComponent<CharacterController>();
+        if (characterController == null)
         {
-            trigger.SetTagFilter("Player");
+            characterController = keyboardPlayer.AddComponent<CharacterController>();
+            characterController.height = 2f;
+            characterController.radius = 0.5f;
+            characterController.center = new Vector3(0f, 1f, 0f);
         }
 
-        Debug.Log($"Meta Quest route tracking configured on {VrRigName}; target is {CenterEyeName}.");
+        CapsuleCollider capsuleCollider = keyboardPlayer.GetComponent<CapsuleCollider>();
+        if (capsuleCollider != null)
+        {
+            capsuleCollider.enabled = false;
+        }
+
+        KeyboardPlayerController movement = keyboardPlayer.GetComponent<KeyboardPlayerController>();
+        if (movement != null && Camera.main != null)
+        {
+            movement.SetDirectionReference(Camera.main.transform);
+        }
+
+        PathRecorder recorder = keyboardPlayer.GetComponent<PathRecorder>();
+        if (recorder == null)
+        {
+            recorder = keyboardPlayer.AddComponent<PathRecorder>();
+        }
+
+        recorder.SetTarget(keyboardPlayer.transform);
+        ResetKeyboardPlayerTransform(keyboardPlayer);
+
+        Debug.Log(
+            $"Keyboard test player configured on {KeyboardTestPlayerName}; CharacterController enabled for trigger detection.");
+    }
+
+    static void ResetKeyboardPlayerTransform(GameObject keyboardPlayer)
+    {
+        if (!hasKeyboardPlayerSpawn)
+        {
+            keyboardPlayerSpawnPosition = keyboardPlayer.transform.position;
+            keyboardPlayerSpawnRotation = keyboardPlayer.transform.rotation;
+            hasKeyboardPlayerSpawn = true;
+            return;
+        }
+
+        CharacterController characterController = keyboardPlayer.GetComponent<CharacterController>();
+        if (characterController != null)
+        {
+            characterController.enabled = false;
+        }
+
+        keyboardPlayer.transform.SetPositionAndRotation(keyboardPlayerSpawnPosition, keyboardPlayerSpawnRotation);
+
+        if (characterController != null)
+        {
+            characterController.enabled = true;
+        }
     }
 }
