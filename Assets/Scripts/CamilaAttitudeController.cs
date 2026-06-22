@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.SceneManagement;
 
 public class CamilaAttitudeController : MonoBehaviour
 {
@@ -32,7 +31,6 @@ public class CamilaAttitudeController : MonoBehaviour
     public class AttitudeStateEvent : UnityEvent<AttitudeState> { }
 
     [SerializeField, Min(0.1f)] float stayAtCTimeoutSeconds = 8f;
-    [SerializeField, Min(0f)] float sceneReloadDelaySeconds = 2f;
     [SerializeField] Animator animator;
     [SerializeField] bool enableResponses = true;
 
@@ -50,6 +48,7 @@ public class CamilaAttitudeController : MonoBehaviour
     bool isPlayerInC;
     bool isTerminal;
     bool isTrialCompleting;
+    bool waitingForNextTrial;
     Coroutine stayAtCCoroutine;
     AttitudeTrialSession.TrialDefinition currentTrial;
 
@@ -69,11 +68,23 @@ public class CamilaAttitudeController : MonoBehaviour
         BeginCurrentTrial();
     }
 
-    [ContextMenu("Reset Attitude Trial Session")]
-    public void ResetTrialSession()
+    public void OnNextTrialClicked()
     {
+        if (!waitingForNextTrial || AttitudeTrialSession.IsSessionComplete)
+        {
+            return;
+        }
+
+        waitingForNextTrial = false;
+        BeginCurrentTrial();
+    }
+
+    public void OnRestartClicked()
+    {
+        CancelStayAtCTimer();
         AttitudeTrialSession.ResetSession();
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        waitingForNextTrial = false;
+        BeginCurrentTrial();
     }
 
     public void BeginCurrentTrial()
@@ -201,17 +212,8 @@ public class CamilaAttitudeController : MonoBehaviour
             return;
         }
 
-        StartCoroutine(ReloadSceneAfterDelay());
-    }
-
-    IEnumerator ReloadSceneAfterDelay()
-    {
-        if (sceneReloadDelaySeconds > 0f)
-        {
-            yield return new WaitForSeconds(sceneReloadDelaySeconds);
-        }
-
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        waitingForNextTrial = true;
+        Debug.Log("Trial finished. Walk back, then click next-trial.");
     }
 
     void CancelStayAtCTimer()

@@ -17,7 +17,6 @@ static class AttitudeTrialPlayModeReset
         }
 
         AttitudeTrialSession.ResetSession();
-        MetaQuestRouteBootstrap.ResetKeyboardPlayerSpawnCache();
     }
 }
 #endif

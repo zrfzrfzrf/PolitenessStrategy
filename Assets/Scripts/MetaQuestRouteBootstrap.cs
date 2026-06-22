@@ -8,15 +8,6 @@ public static class MetaQuestRouteBootstrap
     const string LegacyKeyboardPlayerName = "Keyboard Test Player";
     const string KeyboardTestPlayerName = "player_for_keyboard_test";
 
-    static Vector3 keyboardPlayerSpawnPosition;
-    static Quaternion keyboardPlayerSpawnRotation;
-    static bool hasKeyboardPlayerSpawn;
-
-    public static void ResetKeyboardPlayerSpawnCache()
-    {
-        hasKeyboardPlayerSpawn = false;
-    }
-
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void ConfigureRouteTracking()
     {
@@ -114,33 +105,8 @@ public static class MetaQuestRouteBootstrap
         }
 
         recorder.SetTarget(keyboardPlayer.transform);
-        ResetKeyboardPlayerTransform(keyboardPlayer);
 
         Debug.Log(
             $"Keyboard test player configured on {KeyboardTestPlayerName}; CharacterController enabled for trigger detection.");
-    }
-
-    static void ResetKeyboardPlayerTransform(GameObject keyboardPlayer)
-    {
-        if (!hasKeyboardPlayerSpawn)
-        {
-            keyboardPlayerSpawnPosition = keyboardPlayer.transform.position;
-            keyboardPlayerSpawnRotation = keyboardPlayer.transform.rotation;
-            hasKeyboardPlayerSpawn = true;
-            return;
-        }
-
-        CharacterController characterController = keyboardPlayer.GetComponent<CharacterController>();
-        if (characterController != null)
-        {
-            characterController.enabled = false;
-        }
-
-        keyboardPlayer.transform.SetPositionAndRotation(keyboardPlayerSpawnPosition, keyboardPlayerSpawnRotation);
-
-        if (characterController != null)
-        {
-            characterController.enabled = true;
-        }
     }
 }
