@@ -427,6 +427,7 @@ MonoBehaviour:
         m_CallState: 2
   animator: {fileID: 0}
   animationTriggerName: 
+  zoneId: 
 --- !u!4 &213719826
 Transform:
   m_ObjectHideFlags: 0
@@ -597,12 +598,37 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   target: {fileID: 878724900}
   sampleInterval: 0.5
-  recordOnStart: 1
+  recordFromStart: 1
   exportOnApplicationPause: 1
   exportOnApplicationQuit: 1
+  ClearPreviousRecordWhenExport: 0
   toggleRecordingKey: 114
   exportKey: 112
   filePrefix: path_recording
+  exportDirectory: D:\KTH\SummerIntern\Dataset
+  nextSampleTime: 0
+  isRecording: 0
+--- !u!114 &392499096
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 392499089}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c5ae664b1046974283d8e50c58181e1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  target: {fileID: 878724900}
+  sampleInterval: 0.5
+  recordFromStart: 1
+  exportOnApplicationPause: 1
+  exportOnApplicationQuit: 1
+  ClearPreviousRecordWhenExport: 0
+  toggleRecordingKey: 114
+  exportKey: 112
+  filePrefix: Path_recording
   exportDirectory: D:\KTH\SummerIntern\Dataset
 --- !u!1 &410087039
 GameObject:
@@ -1826,6 +1852,7 @@ GameObject:
   - component: {fileID: 1069966432}
   - component: {fileID: 1069966433}
   - component: {fileID: 1069966434}
+  - component: {fileID: 1069966435}
   m_Layer: 0
   m_Name: player_for_keyboard_test
   m_TagString: Player
@@ -1978,12 +2005,37 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   target: {fileID: 1069966431}
   sampleInterval: 0.5
-  recordOnStart: 1
+  recordFromStart: 1
   exportOnApplicationPause: 1
   exportOnApplicationQuit: 1
+  ClearPreviousRecordWhenExport: 1
   toggleRecordingKey: 114
   exportKey: 112
-  filePrefix: path_recording
+  filePrefix: path_recording_test
+  exportDirectory: D:\KTH\SummerIntern\Dataset
+  nextSampleTime: 0
+  isRecording: 0
+--- !u!114 &1069966435
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1069966427}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c5ae664b1046974283d8e50c58181e1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  target: {fileID: 1069966431}
+  sampleInterval: 0.5
+  recordFromStart: 1
+  exportOnApplicationPause: 1
+  exportOnApplicationQuit: 1
+  ClearPreviousRecordWhenExport: 1
+  toggleRecordingKey: 114
+  exportKey: 112
+  filePrefix: Path_recording_test
   exportDirectory: D:\KTH\SummerIntern\Dataset
 --- !u!4 &1079186462 stripped
 Transform:
@@ -5371,7 +5423,7 @@ GameObject:
   - component: {fileID: 1297387280}
   - component: {fileID: 1297387283}
   m_Layer: 0
-  m_Name: O-space
+  m_Name: Position O
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5400,6 +5452,7 @@ MonoBehaviour:
       m_Calls: []
   animator: {fileID: 1624540772}
   animationTriggerName: startAnimation
+  zoneId: 
 --- !u!4 &1297387282
 Transform:
   m_ObjectHideFlags: 0
@@ -5530,6 +5583,7 @@ MonoBehaviour:
       m_Calls: []
   animator: {fileID: 0}
   animationTriggerName: 
+  zoneId: 
 --- !u!4 &1337741319
 Transform:
   m_ObjectHideFlags: 0
@@ -6197,6 +6251,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3642352042163518208, guid: f54012181eacade4ea242c65f804720f,
         type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3642352042163518208, guid: f54012181eacade4ea242c65f804720f,
+        type: 3}
       propertyPath: m_TagString
       value: Player
       objectReference: {fileID: 0}
@@ -6475,6 +6534,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 392499094}
+    - targetCorrespondingSourceObject: {fileID: 3642352042163518208, guid: f54012181eacade4ea242c65f804720f,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 392499096}
     - targetCorrespondingSourceObject: {fileID: 2483171112401766336, guid: f54012181eacade4ea242c65f804720f,
         type: 3}
       insertIndex: -1

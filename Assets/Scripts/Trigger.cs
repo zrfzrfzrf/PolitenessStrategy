@@ -14,6 +14,8 @@ public class Trigger : MonoBehaviour
 
     public string animationTriggerName;
 
+    [SerializeField] string zoneId;
+
     readonly List<float> speedSamples = new List<float>();
     readonly List<float> sampleTimes = new List<float>();
 
@@ -26,6 +28,17 @@ public class Trigger : MonoBehaviour
     public void SetTagFilter(string requiredTag)
     {
         tagFilter = requiredTag;
+    }
+
+    void Awake()
+    {
+        if (string.IsNullOrEmpty(zoneId))
+        {
+            int lastSpace = gameObject.name.LastIndexOf(' ');
+            zoneId = lastSpace >= 0 && lastSpace < gameObject.name.Length - 1
+                ? gameObject.name.Substring(lastSpace + 1)
+                : gameObject.name;
+        }
     }
 
     void Update()
@@ -78,6 +91,7 @@ public class Trigger : MonoBehaviour
         isPresenceConfirmed = false;
 
         Debug.Log("player entered: " + gameObject.name);
+        ZoneEventBus.Report(zoneId, "enter");
     }
 
     void OnTriggerExit(Collider other)
@@ -94,6 +108,7 @@ public class Trigger : MonoBehaviour
         trackedTransform = null;
 
         Debug.Log("player exited: " + gameObject.name);
+        ZoneEventBus.Report(zoneId, "exit");
         onTriggerExit.Invoke();
     }
 
@@ -107,6 +122,7 @@ public class Trigger : MonoBehaviour
             animator.SetTrigger(animationTriggerName);
         }
 
+        ZoneEventBus.Report(zoneId, "trigger");
         onTriggerEnter.Invoke();
     }
 

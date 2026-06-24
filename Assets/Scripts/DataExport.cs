@@ -5,42 +5,50 @@ using System.IO;
 using System.Text;
 using UnityEngine;
 
-public class PathRecorder : MonoBehaviour
+public class DataExport : MonoBehaviour
 {
     [SerializeField] Transform target;
     [SerializeField, Min(0.02f)] float sampleInterval = 0.5f;
-    [SerializeField] bool recordOnStart = true;
+    [SerializeField] bool recordFromStart = true;
     [SerializeField] bool exportOnApplicationPause = true;
     [SerializeField] bool exportOnApplicationQuit = true;
+    [SerializeField] bool ClearPreviousRecordWhenExport = false;
     [SerializeField] KeyCode toggleRecordingKey = KeyCode.R;
     [SerializeField] KeyCode exportKey = KeyCode.P;
-    [SerializeField] string filePrefix = "path_recording";
+    [SerializeField] string filePrefix = "Path_recording";
     [SerializeField] string exportDirectory = @"D:\KTH\SummerIntern\Dataset";
 
     readonly List<PathSample> samples = new List<PathSample>();
+    readonly List<ZoneEvent> zoneEvents = new List<ZoneEvent>();
     float nextSampleTime;
     bool isRecording;
-    int exportedSampleCount;
-
+    bool hasPreviousSample;
+    Vector3 lastSamplePosition;
+    float lastSampleElapsed;
     public bool IsRecording => isRecording;
-    public int SampleCount => samples.Count;
 
     public void SetTarget(Transform newTarget)
     {
         target = newTarget != null ? newTarget : transform;
     }
 
-    void Awake()
+    void OnEnable()
+    {
+        ZoneEventBus.OnZoneEvent += HandleZoneEvent;
+    }
+
+    void OnDisable()
+    {
+        ZoneEventBus.OnZoneEvent -= HandleZoneEvent;
+    }
+
+    void Start()
     {
         if (target == null)
         {
             target = transform;
         }
-    }
-
-    void Start()
-    {
-        if (recordOnStart)
+        if (recordFromStart)
         {
             StartRecording();
         }
@@ -77,6 +85,7 @@ public class PathRecorder : MonoBehaviour
     public void StartRecording()
     {
         isRecording = true;
+        hasPreviousSample = false;
         nextSampleTime = Time.time;
     }
 
@@ -85,17 +94,11 @@ public class PathRecorder : MonoBehaviour
         isRecording = false;
     }
 
-    public void ClearSamples()
-    {
-        samples.Clear();
-        exportedSampleCount = 0;
-    }
-
     public string ExportCsv()
     {
         if (samples.Count == 0)
         {
-            Debug.LogWarning("PathRecorder has no samples to export.");
+            Debug.LogWarning("DataExport has no samples to export.");
             return string.Empty;
         }
 
@@ -105,8 +108,10 @@ public class PathRecorder : MonoBehaviour
         Directory.CreateDirectory(directory);
         string path = Path.Combine(directory, fileName);
 
+        int sampleCount = samples.Count;
         var csv = new StringBuilder();
-        csv.AppendLine("sample_index,elapsed_seconds,local_time_iso8601,x,y,z,rotation_x,rotation_y,rotation_z");
+        csv.AppendLine(
+            "sample_index,elapsed_seconds,local_time_iso8601,x,y,z,rotation_x,rotation_y,rotation_z,speed_mps,is_in_C,is_in_F,is_in_O");
 
         for (int i = 0; i < samples.Count; i++)
         {
@@ -119,14 +124,46 @@ public class PathRecorder : MonoBehaviour
             csv.Append(sample.Position.z.ToString("F4", CultureInfo.InvariantCulture)).Append(',');
             csv.Append(sample.Rotation.eulerAngles.x.ToString("F3", CultureInfo.InvariantCulture)).Append(',');
             csv.Append(sample.Rotation.eulerAngles.y.ToString("F3", CultureInfo.InvariantCulture)).Append(',');
-            csv.Append(sample.Rotation.eulerAngles.z.ToString("F3", CultureInfo.InvariantCulture));
+            csv.Append(sample.Rotation.eulerAngles.z.ToString("F3", CultureInfo.InvariantCulture)).Append(',');
+            csv.Append(sample.SpeedMps.ToString("F4", CultureInfo.InvariantCulture)).Append(',');
+            csv.Append(sample.IsInC ? '1' : '0').Append(',');
+            csv.Append(sample.IsInF ? '1' : '0').Append(',');
+            csv.Append(sample.IsInO ? '1' : '0');
             csv.AppendLine();
         }
 
         File.WriteAllText(path, csv.ToString(), Encoding.UTF8);
-        exportedSampleCount = samples.Count;
-        Debug.Log($"PathRecorder exported {samples.Count} samples to: {path}");
+
+        string eventsPath = Path.Combine(directory, $"{filePrefix}_events_{timestamp}.csv");
+        ExportZoneEventsCsv(eventsPath);
+
+        if (ClearPreviousRecordWhenExport)
+        {
+            samples.Clear();
+            zoneEvents.Clear();
+        }
+
+        Debug.Log($"DataExport exported {sampleCount} samples to: {path}");
         return path;
+    }
+
+    void ExportZoneEventsCsv(string path)
+    {
+        var csv = new StringBuilder();
+        csv.AppendLine("elapsed_seconds,local_time_iso8601,zone,event_type");
+
+        for (int i = 0; i < zoneEvents.Count; i++)
+        {
+            ZoneEvent zoneEvent = zoneEvents[i];
+            csv.Append(zoneEvent.ElapsedSeconds.ToString("F3", CultureInfo.InvariantCulture)).Append(',');
+            csv.Append(zoneEvent.LocalTimeIso8601).Append(',');
+            csv.Append(zoneEvent.Zone).Append(',');
+            csv.Append(zoneEvent.EventType);
+            csv.AppendLine();
+        }
+
+        File.WriteAllText(path, csv.ToString(), Encoding.UTF8);
+        Debug.Log($"DataExport exported {zoneEvents.Count} zone events to: {path}");
     }
 
     string GetExportDirectory()
@@ -144,15 +181,15 @@ public class PathRecorder : MonoBehaviour
     {
         if (pauseStatus)
         {
-            if (exportOnApplicationPause)
+            if (exportOnApplicationPause && samples.Count != 0)
             {
-                ExportIfNeeded();
+                ExportCsv();
             }
 
             return;
         }
 
-        if (recordOnStart)
+        if (recordFromStart)
         {
             StartRecording();
         }
@@ -160,29 +197,54 @@ public class PathRecorder : MonoBehaviour
 
     void OnApplicationQuit()
     {
-        if (exportOnApplicationQuit)
-        {
-            ExportIfNeeded();
-        }
-    }
-
-    void ExportIfNeeded()
-    {
-        if (samples.Count > exportedSampleCount)
+        if (exportOnApplicationQuit && samples.Count != 0)
         {
             ExportCsv();
         }
     }
 
+    void HandleZoneEvent(ZoneEvent zoneEvent)
+    {
+        if (!isRecording)
+        {
+            return;
+        }
+
+        zoneEvents.Add(zoneEvent);
+    }
+
     void RecordSample()
     {
+        float elapsed = Time.time;
+        Vector3 position = target.position;
+        float speedMps = 0f;
+
+        if (hasPreviousSample)
+        {
+            Vector3 delta = position - lastSamplePosition;
+            delta.y = 0f;
+            float deltaTime = elapsed - lastSampleElapsed;
+            if (deltaTime > 0f)
+            {
+                speedMps = delta.magnitude / deltaTime;
+            }
+        }
+
         samples.Add(new PathSample
         {
-            ElapsedSeconds = Time.time,
+            ElapsedSeconds = elapsed,
             LocalTimeIso8601 = DateTime.Now.ToString("O", CultureInfo.InvariantCulture),
-            Position = target.position,
-            Rotation = target.rotation
+            Position = position,
+            Rotation = target.rotation,
+            SpeedMps = speedMps,
+            IsInC = ZoneEventBus.InC,
+            IsInF = ZoneEventBus.InF,
+            IsInO = ZoneEventBus.InO
         });
+
+        lastSamplePosition = position;
+        lastSampleElapsed = elapsed;
+        hasPreviousSample = true;
     }
 
     struct PathSample
@@ -191,5 +253,9 @@ public class PathRecorder : MonoBehaviour
         public string LocalTimeIso8601;
         public Vector3 Position;
         public Quaternion Rotation;
+        public float SpeedMps;
+        public bool IsInC;
+        public bool IsInF;
+        public bool IsInO;
     }
 }

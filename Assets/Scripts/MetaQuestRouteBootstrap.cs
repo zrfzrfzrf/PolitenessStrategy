@@ -55,10 +55,10 @@ public static class MetaQuestRouteBootstrap
             return;
         }
 
-        PathRecorder recorder = vrRig.GetComponent<PathRecorder>();
+        DataExport recorder = vrRig.GetComponent<DataExport>();
         if (recorder == null)
         {
-            recorder = vrRig.AddComponent<PathRecorder>();
+            recorder = vrRig.AddComponent<DataExport>();
         }
 
         recorder.SetTarget(centerEye);
@@ -98,10 +98,10 @@ public static class MetaQuestRouteBootstrap
             movement.SetDirectionReference(Camera.main.transform);
         }
 
-        PathRecorder recorder = keyboardPlayer.GetComponent<PathRecorder>();
+        DataExport recorder = keyboardPlayer.GetComponent<DataExport>();
         if (recorder == null)
         {
-            recorder = keyboardPlayer.AddComponent<PathRecorder>();
+            recorder = keyboardPlayer.AddComponent<DataExport>();
         }
 
         recorder.SetTarget(keyboardPlayer.transform);
