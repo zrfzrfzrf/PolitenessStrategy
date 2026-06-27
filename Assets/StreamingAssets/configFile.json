@@ -1,0 +1,49 @@
+{
+    "logSettings": {
+        "sessionId": "SessionID",
+        "mainLogFolder": "F:/unity-/PolitenessStrategy_clean/Assets/../LogFiles_ExciteOMeter/",
+        "mainDebugFilename": "logDebug.txt",
+        "sessionJsonFilename": "sessionData.json",
+        "recordScreenshots": true,
+        "screenshotsPeriodSecs": 20.0,
+        "recordMovementData": true,
+        "recordMovementFrequency": 10
+    },
+    "featureSettings": {
+        "DEFAULT_IS_SAMPLE_BASED": false,
+        "DEFAULT_WINDOW_TIME_SECS": 20.0,
+        "DEFAULT_OVERLAP_FRACTION": 0.5,
+        "DEFAULT_SAMPLE_BUFFER": 5,
+        "DEFAULT_OVERLAP_SAMPLES": 1,
+        "DEFAULT_OFFSET_SAMPLES_TIMESTAMP": 0,
+        "matchInputOutputLength": true,
+        "RMSSD": {
+            "isSampleBased": true,
+            "windowTime": 10.0,
+            "overlapPercentageTime": 0.0,
+            "sampleBufferLength": 10,
+            "overlapSamplesLength": 9,
+            "offsetSamplesInTimestamp": 8
+        },
+        "SDNN": {
+            "isSampleBased": false,
+            "windowTime": 10.0,
+            "overlapPercentageTime": 0.0,
+            "sampleBufferLength": 5,
+            "overlapSamplesLength": 1,
+            "offsetSamplesInTimestamp": 0
+        },
+        "HeadsetVelocityAccelerations": {
+            "isSampleBased": true,
+            "windowTime": 0.0,
+            "overlapPercentageTime": 0.0,
+            "sampleBufferLength": 3,
+            "overlapSamplesLength": 1,
+            "offsetSamplesInTimestamp": 0
+        }
+    },
+    "offlineAnalysisSettings": {
+        "isInOfflineMode": false,
+        "callerSceneName": ""
+    }
+}
