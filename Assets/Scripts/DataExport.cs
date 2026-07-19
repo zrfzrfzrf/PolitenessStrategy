@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using ExciteOMeter;
 using UnityEngine;
 
 public class DataExport : MonoBehaviour
@@ -18,6 +19,10 @@ public class DataExport : MonoBehaviour
     [SerializeField] string filePrefix = "Path_recording";
     [SerializeField] string exportDirectory = @"D:\KTH\SummerIntern\Dataset";
 
+    [Header("Session time and physiological signals")]
+    [SerializeField] bool useSessionTime;
+    [SerializeField] bool includePhysiologicalSignals;
+
     readonly List<PathSample> samples = new List<PathSample>();
     readonly List<ZoneEvent> zoneEvents = new List<ZoneEvent>();
     float nextSampleTime;
@@ -25,6 +30,12 @@ public class DataExport : MonoBehaviour
     bool hasPreviousSample;
     Vector3 lastSamplePosition;
     float lastSampleElapsed;
+    float latestEcg;
+    float latestHr;
+    float latestRmssd;
+    bool hasEcg;
+    bool hasHr;
+    bool hasRmssd;
     public bool IsRecording => isRecording;
 
     public void SetTarget(Transform newTarget)
@@ -35,11 +46,13 @@ public class DataExport : MonoBehaviour
     void OnEnable()
     {
         ZoneEventBus.OnZoneEvent += HandleZoneEvent;
+        EoM_Events.OnDataReceived += HandlePhysiologicalData;
     }
 
     void OnDisable()
     {
         ZoneEventBus.OnZoneEvent -= HandleZoneEvent;
+        EoM_Events.OnDataReceived -= HandlePhysiologicalData;
     }
 
     void Start()
@@ -73,20 +86,38 @@ public class DataExport : MonoBehaviour
             ExportCsv();
         }
 
-        if (!isRecording || target == null || Time.time < nextSampleTime)
+        if (!isRecording || target == null)
         {
             return;
         }
 
-        RecordSample();
-        nextSampleTime = Time.time + sampleInterval;
+        if (useSessionTime && !ExciteOMeterManager.currentlyRecordingSession)
+        {
+            return;
+        }
+
+        float elapsed = GetRecordingElapsedSeconds();
+        if (elapsed < nextSampleTime)
+        {
+            return;
+        }
+
+        RecordSample(elapsed);
+        nextSampleTime = elapsed + sampleInterval;
     }
 
     public void StartRecording()
     {
         isRecording = true;
         hasPreviousSample = false;
-        nextSampleTime = Time.time;
+        nextSampleTime = useSessionTime ? 0f : Time.time;
+
+        if (includePhysiologicalSignals)
+        {
+            hasEcg = false;
+            hasHr = false;
+            hasRmssd = false;
+        }
     }
 
     public void StopRecording()
@@ -110,8 +141,14 @@ public class DataExport : MonoBehaviour
 
         int sampleCount = samples.Count;
         var csv = new StringBuilder();
-        csv.AppendLine(
-            "sample_index,elapsed_seconds,local_time_iso8601,x,y,z,rotation_x,rotation_y,rotation_z,speed_mps,is_in_C,is_in_F,is_in_O");
+        csv.Append("sample_index,");
+        csv.Append(useSessionTime ? "session_time" : "elapsed_seconds");
+        csv.Append(",local_time_iso8601,x,y,z,rotation_x,rotation_y,rotation_z,speed_mps,is_in_C,is_in_F,is_in_O");
+        if (includePhysiologicalSignals)
+        {
+            csv.Append(",ECG,HR,RMSSD");
+        }
+        csv.AppendLine();
 
         for (int i = 0; i < samples.Count; i++)
         {
@@ -129,6 +166,16 @@ public class DataExport : MonoBehaviour
             csv.Append(sample.IsInC ? '1' : '0').Append(',');
             csv.Append(sample.IsInF ? '1' : '0').Append(',');
             csv.Append(sample.IsInO ? '1' : '0');
+
+            if (includePhysiologicalSignals)
+            {
+                csv.Append(',');
+                AppendSignalValue(csv, sample.HasEcg, sample.Ecg);
+                csv.Append(',');
+                AppendSignalValue(csv, sample.HasHr, sample.Hr);
+                csv.Append(',');
+                AppendSignalValue(csv, sample.HasRmssd, sample.Rmssd);
+            }
             csv.AppendLine();
         }
 
@@ -150,7 +197,8 @@ public class DataExport : MonoBehaviour
     void ExportZoneEventsCsv(string path)
     {
         var csv = new StringBuilder();
-        csv.AppendLine("elapsed_seconds,local_time_iso8601,zone,event_type");
+        csv.Append(useSessionTime ? "session_time" : "elapsed_seconds");
+        csv.AppendLine(",local_time_iso8601,zone,event_type");
 
         for (int i = 0; i < zoneEvents.Count; i++)
         {
@@ -210,12 +258,60 @@ public class DataExport : MonoBehaviour
             return;
         }
 
+        if (useSessionTime && ExciteOMeterManager.currentlyRecordingSession)
+        {
+            zoneEvent.ElapsedSeconds = ExciteOMeterManager.GetTimestamp();
+        }
+
         zoneEvents.Add(zoneEvent);
     }
 
-    void RecordSample()
+    void HandlePhysiologicalData(DataType type, float timestamp, float value)
     {
-        float elapsed = Time.time;
+        if (!includePhysiologicalSignals || !isRecording)
+        {
+            return;
+        }
+
+        if (useSessionTime && !ExciteOMeterManager.currentlyRecordingSession)
+        {
+            return;
+        }
+
+        switch (type)
+        {
+            case DataType.RawECG:
+                latestEcg = value;
+                hasEcg = true;
+                break;
+            case DataType.HeartRate:
+                latestHr = value;
+                hasHr = true;
+                break;
+            case DataType.RMSSD:
+                latestRmssd = value;
+                hasRmssd = true;
+                break;
+        }
+    }
+
+    float GetRecordingElapsedSeconds()
+    {
+        return useSessionTime
+            ? ExciteOMeterManager.GetTimestamp()
+            : Time.time;
+    }
+
+    static void AppendSignalValue(StringBuilder csv, bool hasValue, float value)
+    {
+        if (hasValue)
+        {
+            csv.Append(value.ToString("G9", CultureInfo.InvariantCulture));
+        }
+    }
+
+    void RecordSample(float elapsed)
+    {
         Vector3 position = target.position;
         float speedMps = 0f;
 
@@ -239,7 +335,13 @@ public class DataExport : MonoBehaviour
             SpeedMps = speedMps,
             IsInC = ZoneEventBus.InC,
             IsInF = ZoneEventBus.InF,
-            IsInO = ZoneEventBus.InO
+            IsInO = ZoneEventBus.InO,
+            Ecg = latestEcg,
+            Hr = latestHr,
+            Rmssd = latestRmssd,
+            HasEcg = hasEcg,
+            HasHr = hasHr,
+            HasRmssd = hasRmssd
         });
 
         lastSamplePosition = position;
@@ -257,5 +359,11 @@ public class DataExport : MonoBehaviour
         public bool IsInC;
         public bool IsInF;
         public bool IsInO;
+        public float Ecg;
+        public float Hr;
+        public float Rmssd;
+        public bool HasEcg;
+        public bool HasHr;
+        public bool HasRmssd;
     }
 }
