@@ -398,8 +398,8 @@ MonoBehaviour:
   onTriggerEnter:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1624540773}
-        m_TargetAssemblyTypeName: CamilaAttitudeController, Assembly-CSharp
+      - m_Target: {fileID: 2137114096}
+        m_TargetAssemblyTypeName: AgentAttitudeController, Assembly-CSharp
         m_MethodName: OnPlayerEnterC
         m_Mode: 1
         m_Arguments:
@@ -413,8 +413,8 @@ MonoBehaviour:
   onTriggerExit:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1624540773}
-        m_TargetAssemblyTypeName: CamilaAttitudeController, Assembly-CSharp
+      - m_Target: {fileID: 2137114096}
+        m_TargetAssemblyTypeName: AgentAttitudeController, Assembly-CSharp
         m_MethodName: OnPlayerExitC
         m_Mode: 1
         m_Arguments:
@@ -2594,6 +2594,37 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 1276511596}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &999470019
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 999470020}
+  m_Layer: 0
+  m_Name: VisualSlot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &999470020
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 999470019}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2137114095}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &1008509987 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7811380885913119614, guid: 22232744aa297864d80e18a5d59bbdb2,
@@ -4781,6 +4812,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Kevin
       objectReference: {fileID: 0}
+    - target: {fileID: 5073800400957819758, guid: 22232744aa297864d80e18a5d59bbdb2,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5086258131155271098, guid: 22232744aa297864d80e18a5d59bbdb2,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -6239,7 +6275,7 @@ MonoBehaviour:
   onTriggerExit:
     m_PersistentCalls:
       m_Calls: []
-  animator: {fileID: 1624540772}
+  animator: {fileID: 0}
   animationTriggerName: startAnimation
   zoneId: 
 --- !u!4 &1297387282
@@ -6355,8 +6391,8 @@ MonoBehaviour:
   onTriggerEnter:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1624540773}
-        m_TargetAssemblyTypeName: CamilaAttitudeController, Assembly-CSharp
+      - m_Target: {fileID: 2137114096}
+        m_TargetAssemblyTypeName: AgentAttitudeController, Assembly-CSharp
         m_MethodName: OnPlayerEnterF
         m_Mode: 1
         m_Arguments:
@@ -8230,6 +8266,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Camila
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 0001b2b57b525c04fa122b3408c1eda0,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5866666021909216657, guid: 0001b2b57b525c04fa122b3408c1eda0,
         type: 3}
       propertyPath: m_Controller
@@ -8765,6 +8806,92 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 1949056327}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &2137114094
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2137114095}
+  - component: {fileID: 2137114097}
+  - component: {fileID: 2137114096}
+  - component: {fileID: 2137114098}
+  m_Layer: 0
+  m_Name: AgentRoot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2137114095
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2137114094}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.72358185, z: 0, w: 0.69023865}
+  m_LocalPosition: {x: -1, y: -0.65, z: 4}
+  m_LocalScale: {x: 1.1075355, y: 1.1075355, z: 1.1075355}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 999470020}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 92.702, z: 0}
+--- !u!114 &2137114096
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2137114094}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b058e801fb0940444b7191e81c89741d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  stayAtCTimeoutSeconds: 8
+  agentManager: {fileID: 2137114097}
+  enableResponses: 1
+  onStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!114 &2137114097
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2137114094}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3bb3bd0467b4c3c46bd0d3044db24a62, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  visualSlot: {fileID: 999470020}
+  currentAgent: {fileID: 11400000, guid: 813d0d5bceb73f64fa7975e2b7415718, type: 2}
+  instantiateOnAwake: 1
+--- !u!114 &2137114098
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2137114094}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 87a97506037e01c4b8498fb7fa5f3db0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  agentManager: {fileID: 2137114097}
+  lookTarget: {fileID: 801891593}
+  lookTargetName: Target
+  sourceWeight: 1
+  includeInactive: 1
+  rebuildRigBuilder: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -8787,3 +8914,4 @@ SceneRoots:
   - {fileID: 1069966431}
   - {fileID: 2100000101}
   - {fileID: 286287708}
+  - {fileID: 2137114095}

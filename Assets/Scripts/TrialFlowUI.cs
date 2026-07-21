@@ -6,9 +6,10 @@ public class TrialFlowUI : MonoBehaviour
 {
     void Awake()
     {
-        CamilaAttitudeController controller = FindObjectOfType<CamilaAttitudeController>();
-        if (controller == null)
+        AgentAttitudeController agentController = FindObjectOfType<AgentAttitudeController>();
+        if (agentController == null)
         {
+            Debug.LogWarning("TrialFlowUI could not find an AgentAttitudeController.");
             return;
         }
 
@@ -24,8 +25,8 @@ public class TrialFlowUI : MonoBehaviour
         canvasObject.AddComponent<CanvasScaler>();
         canvasObject.AddComponent<GraphicRaycaster>();
 
-        MakeButton(canvasObject.transform, "next-trial", new Vector2(-200f, 30f), controller.OnNextTrialClicked);
-        MakeButton(canvasObject.transform, "restart", new Vector2(200f, 30f), controller.OnRestartClicked);
+        MakeButton(canvasObject.transform, "next-trial", new Vector2(-200f, 30f), agentController.OnNextTrialClicked);
+        MakeButton(canvasObject.transform, "restart", new Vector2(200f, 30f), agentController.OnRestartClicked);
     }
 
     static void MakeButton(Transform parent, string label, Vector2 pos, UnityEngine.Events.UnityAction onClick)

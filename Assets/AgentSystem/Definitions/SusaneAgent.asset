@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d665c65d8e38d647a557e447268ee3f, type: 3}
+  m_Name: SusaneAgent
+  m_EditorClassIdentifier: 
+  agentId: Susane
+  visualPrefab: {fileID: 7439360573848350685, guid: dd5b240b64c7fe344a20b78781498d3e,
+    type: 3}
+  animationProfile: {fileID: 11400000, guid: 106d7bf64bb5bf442b9aef5a41e5605f, type: 2}
+  localPositionOffset: {x: 0, y: 0, z: 0}
+  localEulerOffset: {x: 0, y: 0, z: 0}
+  localScale: {x: 1, y: 1, z: 1}

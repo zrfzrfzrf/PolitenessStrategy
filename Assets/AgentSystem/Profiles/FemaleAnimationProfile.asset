@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 713c8d28839637b429f64f0f8001ac59, type: 3}
+  m_Name: FemaleAnimationProfile
+  m_EditorClassIdentifier: 
+  controller: {fileID: 9100000, guid: c9ac056535aed85468c8b1ef7de8491a, type: 2}
+  idleState: Idle
+  politeState: Would_You_Like_To_Come_Here
+  neutralState: This_Place_Is_Waiting_For_You
+  hostileState: Come_here
+  praiseState: Welcome_back
+  ignoreState: 
+  crossFadeSeconds: 0.05

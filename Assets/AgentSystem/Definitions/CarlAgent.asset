@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d665c65d8e38d647a557e447268ee3f, type: 3}
+  m_Name: CarlAgent
+  m_EditorClassIdentifier: 
+  agentId: Carl
+  visualPrefab: {fileID: 3715182366574166389, guid: 821bbf38d25842f4cbdb236b6a645f25,
+    type: 3}
+  animationProfile: {fileID: 11400000, guid: b42cab9ea6274354281e06a69dcd6336, type: 2}
+  localPositionOffset: {x: 0, y: 0, z: 0}
+  localEulerOffset: {x: 0, y: 0, z: 0}
+  localScale: {x: 1, y: 1, z: 1}

@@ -277,6 +277,92 @@ CapsuleCollider:
   m_Height: 0.32234535
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &2760387803697942877
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5519055774652278384}
+  - component: {fileID: 7422071209808150529}
+  m_Layer: 0
+  m_Name: HeadAim
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5519055774652278384
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2760387803697942877}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2218325150533110258}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7422071209808150529
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2760387803697942877}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3c430f382484144e925c097c2d33cfe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Weight: 1
+  m_Data:
+    m_ConstrainedObject: {fileID: 1413127430380762053}
+    m_SourceObjects:
+      m_Length: 0
+      m_Item0:
+        transform: {fileID: 0}
+        weight: 0
+      m_Item1:
+        transform: {fileID: 0}
+        weight: 0
+      m_Item2:
+        transform: {fileID: 0}
+        weight: 0
+      m_Item3:
+        transform: {fileID: 0}
+        weight: 0
+      m_Item4:
+        transform: {fileID: 0}
+        weight: 0
+      m_Item5:
+        transform: {fileID: 0}
+        weight: 0
+      m_Item6:
+        transform: {fileID: 0}
+        weight: 0
+      m_Item7:
+        transform: {fileID: 0}
+        weight: 0
+    m_Offset: {x: 0, y: 0, z: 0}
+    m_MinLimit: -90
+    m_MaxLimit: 90
+    m_AimAxis: 4
+    m_UpAxis: 2
+    m_WorldUpType: 0
+    m_WorldUpObject: {fileID: 0}
+    m_WorldUpAxis: 2
+    m_MaintainOffset: 0
+    m_ConstrainedAxes:
+      x: 1
+      y: 1
+      z: 1
 --- !u!1 &2771248296928445625
 GameObject:
   m_ObjectHideFlags: 0
@@ -886,6 +972,53 @@ CapsuleCollider:
   m_Height: 0.4030525
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &7266660346938690293
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2218325150533110258}
+  - component: {fileID: 3867436133550105653}
+  m_Layer: 0
+  m_Name: Rig 1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2218325150533110258
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7266660346938690293}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 5519055774652278384}
+  m_Father: {fileID: 4090722021019917263}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3867436133550105653
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7266660346938690293}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 70b342d8ce5c2fd48b8fa3147d48d1d1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Weight: 1
+  m_Effectors: []
 --- !u!1 &7769963388799703400
 GameObject:
   m_ObjectHideFlags: 0
@@ -1073,6 +1206,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 5e878a7c2d09ac644ad2947a650eb8da,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2218325150533110258}
     - targetCorrespondingSourceObject: {fileID: 8275501230857046118, guid: 5e878a7c2d09ac644ad2947a650eb8da,
         type: 3}
       insertIndex: -1
@@ -1150,6 +1287,10 @@ PrefabInstance:
         type: 3}
       insertIndex: 1
       addedObject: {fileID: 3583938294694027342}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 5e878a7c2d09ac644ad2947a650eb8da,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 348247863752922380}
     - targetCorrespondingSourceObject: {fileID: 8304175215116285622, guid: 5e878a7c2d09ac644ad2947a650eb8da,
         type: 3}
       insertIndex: -1
@@ -1215,7 +1356,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 56bc35a6425d98b49b5a4ae1a960562b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  currentEditType: 0
+  currentEditType: 8
   availableColliderTypes: 0
   manipulator: 0
   manipulatorArray:
@@ -1228,7 +1369,230 @@ MonoBehaviour:
   magicaCloth2Available: 0
   dynamicBoneAvailable: 0
   hasGizmoUtility: 0
-  abstractedCapsuleColliders: []
+  abstractedCapsuleColliders:
+  - transform: {fileID: 5379224389431962462}
+    isEnabled: 1
+    localPosition: {x: -0.0000448121, y: 0.23523931, z: -0.015025751}
+    localRotation: {x: -0.00000009447101, y: -0.00000001351145, z: -0.00000007504036,
+      w: 1}
+    height: 0.46607283
+    radius: 0.057646785
+    name: CC_Base_L_Calf_Capsule
+    axis: 1
+    colliderTypes: 1
+    nativeRef: {fileID: 2664398436591279367}
+    magicaRef: {fileID: 0}
+    dynamicRef: {fileID: 0}
+  - transform: {fileID: 4133126907823335951}
+    isEnabled: 1
+    localPosition: {x: 0.00026939763, y: 0.23192674, z: 0.010312744}
+    localRotation: {x: -0.05230412, y: -0.0018265038, z: 0.03485159, w: 0.9980212}
+    height: 0.5642493
+    radius: 0.07071281
+    name: CC_Base_L_Thigh_Capsule
+    axis: 1
+    colliderTypes: 1
+    nativeRef: {fileID: 1580647095317039400}
+    magicaRef: {fileID: 0}
+    dynamicRef: {fileID: 0}
+  - transform: {fileID: 505483685231581}
+    isEnabled: 1
+    localPosition: {x: 0.000077991186, y: 0.23524176, z: -0.015961114}
+    localRotation: {x: -0.0000001576263, y: 0.00000002649903, z: 0.00000014667228,
+      w: 1}
+    height: 0.46607277
+    radius: 0.05754086
+    name: CC_Base_R_Calf_Capsule
+    axis: 1
+    colliderTypes: 1
+    nativeRef: {fileID: 5076636466607384108}
+    magicaRef: {fileID: 0}
+    dynamicRef: {fileID: 0}
+  - transform: {fileID: 2843728688067656424}
+    isEnabled: 1
+    localPosition: {x: -0.00029211395, y: 0.23193184, z: 0.01033732}
+    localRotation: {x: -0.052304123, y: 0.0018265157, z: -0.034851525, w: 0.9980212}
+    height: 0.564196
+    radius: 0.07038782
+    name: CC_Base_R_Thigh_Capsule
+    axis: 1
+    colliderTypes: 1
+    nativeRef: {fileID: 4186287131420070865}
+    magicaRef: {fileID: 0}
+    dynamicRef: {fileID: 0}
+  - transform: {fileID: 856052939764424362}
+    isEnabled: 1
+    localPosition: {x: -0.0012157675, y: 0.04531447, z: 0.011921049}
+    localRotation: {x: -0.000000046566107, y: -0.0000000610016, z: 0.00000016711047,
+      w: 1}
+    height: 0.09572019
+    radius: 0.027483882
+    name: CC_Base_L_Hand_Capsule
+    axis: 1
+    colliderTypes: 1
+    nativeRef: {fileID: 2397401202658545217}
+    magicaRef: {fileID: 0}
+    dynamicRef: {fileID: 0}
+  - transform: {fileID: 6000885550575459634}
+    isEnabled: 1
+    localPosition: {x: 0.000012343748, y: 0.110316426, z: 0.00001857604}
+    localRotation: {x: -5.820765e-10, y: 0.00000007026027, z: 0.00000012700777, w: -1}
+    height: 0.29718074
+    radius: 0.039683387
+    name: CC_Base_L_Forearm_Capsule
+    axis: 1
+    colliderTypes: 1
+    nativeRef: {fileID: 3726253755473265766}
+    magicaRef: {fileID: 0}
+    dynamicRef: {fileID: 0}
+  - transform: {fileID: 512854212172575361}
+    isEnabled: 1
+    localPosition: {x: -0.012569743, y: 0.10272105, z: -0.005589098}
+    localRotation: {x: -0.000000029802315, y: 0.00000008731147, z: 0.000000027852359,
+      w: -1}
+    height: 0.32234535
+    radius: 0.04645426
+    name: CC_Base_L_Upperarm_Capsule
+    axis: 1
+    colliderTypes: 1
+    nativeRef: {fileID: 8220746767687490674}
+    magicaRef: {fileID: 0}
+    dynamicRef: {fileID: 0}
+  - transform: {fileID: 2002856968103959370}
+    isEnabled: 1
+    localPosition: {x: -0.0000005483623, y: 0.067346446, z: 0.019014448}
+    localRotation: {x: 0.00000007450578, y: -3.6432828e-13, z: -6.571827e-14, w: 1}
+    height: 0.20997022
+    radius: 0.0701443
+    name: CC_Base_Head_Capsule
+    axis: 1
+    colliderTypes: 1
+    nativeRef: {fileID: 2977098270754271242}
+    magicaRef: {fileID: 0}
+    dynamicRef: {fileID: 0}
+  - transform: {fileID: 8282370285486891280}
+    isEnabled: 1
+    localPosition: {x: 0.0000001430515, y: 0.019029278, z: 0.0000068787485}
+    localRotation: {x: 0.000000029802315, y: -2.695399e-13, z: 2.656971e-14, w: 1}
+    height: 0.1502746
+    radius: 0.048611183
+    name: CC_Base_NeckTwist01_Capsule
+    axis: 1
+    colliderTypes: 1
+    nativeRef: {fileID: 2366680741027534115}
+    magicaRef: {fileID: 0}
+    dynamicRef: {fileID: 0}
+  - transform: {fileID: 5345225530164664167}
+    isEnabled: 1
+    localPosition: {x: -0.000024051662, y: -0.11331228, z: 0.035110116}
+    localRotation: {x: 0.000000014901158, y: -0.7071067, z: -0.000000029802315, w: 0.70710677}
+    height: 0.3477351
+    radius: 0.10532317
+    name: CC_Base_NeckTwist01_Capsule(0)
+    axis: 2
+    colliderTypes: 1
+    nativeRef: {fileID: 7939851153614564370}
+    magicaRef: {fileID: 0}
+    dynamicRef: {fileID: 0}
+  - transform: {fileID: 7203415516138899247}
+    isEnabled: 1
+    localPosition: {x: 0.06999018, y: -0.1284782, z: 0.08447619}
+    localRotation: {x: -0.2980698, y: -0.64121324, z: 0.2980698, w: 0.64121324}
+    height: 0.26969215
+    radius: 0.06859901
+    name: CC_Base_NeckTwist01_Capsule(1)
+    axis: 1
+    colliderTypes: 1
+    nativeRef: {fileID: 7536569948463841387}
+    magicaRef: {fileID: 0}
+    dynamicRef: {fileID: 0}
+  - transform: {fileID: 6859619430724948242}
+    isEnabled: 1
+    localPosition: {x: -0.07000982, y: -0.12847827, z: 0.08447618}
+    localRotation: {x: -0.2980698, y: -0.64121324, z: 0.2980698, w: 0.64121324}
+    height: 0.26969215
+    radius: 0.06859901
+    name: CC_Base_NeckTwist01_Capsule(2)
+    axis: 1
+    colliderTypes: 1
+    nativeRef: {fileID: 5186470240633367354}
+    magicaRef: {fileID: 0}
+    dynamicRef: {fileID: 0}
+  - transform: {fileID: 2695292761517734417}
+    isEnabled: 1
+    localPosition: {x: 0.0014343265, y: 0.04546631, z: 0.009257046}
+    localRotation: {x: 0.000000018626444, y: -0.00000011222433, z: 0.00000003541207,
+      w: -1}
+    height: 0.09573325
+    radius: 0.029775893
+    name: CC_Base_R_Hand_Capsule
+    axis: 1
+    colliderTypes: 1
+    nativeRef: {fileID: 8257224679233628863}
+    magicaRef: {fileID: 0}
+    dynamicRef: {fileID: 0}
+  - transform: {fileID: 7280028237059067857}
+    isEnabled: 1
+    localPosition: {x: -0.000019373338, y: 0.11025395, z: 0.000024959116}
+    localRotation: {x: 0.00000007275956, y: 0.000000014902977, z: 0.00000012511327,
+      w: 1}
+    height: 0.29702896
+    radius: 0.039681967
+    name: CC_Base_R_Forearm_Capsule
+    axis: 1
+    colliderTypes: 1
+    nativeRef: {fileID: 1329093545994152295}
+    magicaRef: {fileID: 0}
+    dynamicRef: {fileID: 0}
+  - transform: {fileID: 904242190333781596}
+    isEnabled: 1
+    localPosition: {x: 0.012566015, y: 0.10279068, z: -0.0055875964}
+    localRotation: {x: -0.000000007450578, y: 0.00000004097818, z: -0.000000010390064,
+      w: 1}
+    height: 0.32248148
+    radius: 0.04645186
+    name: CC_Base_R_Upperarm_Capsule
+    axis: 1
+    colliderTypes: 1
+    nativeRef: {fileID: 8115370321792182477}
+    magicaRef: {fileID: 0}
+    dynamicRef: {fileID: 0}
+  - transform: {fileID: 8580348702435063360}
+    isEnabled: 1
+    localPosition: {x: 0.00000032952144, y: 0.16154505, z: -0.00033478442}
+    localRotation: {x: -0.03697012, y: -0.70613974, z: 0.03697012, w: 0.7061397}
+    height: 0.27248946
+    radius: 0.110098064
+    name: CC_Base_Spine01_Capsule(1)
+    axis: 2
+    colliderTypes: 1
+    nativeRef: {fileID: 7032502519150975882}
+    magicaRef: {fileID: 0}
+    dynamicRef: {fileID: 0}
+  - transform: {fileID: 7630058018855152426}
+    isEnabled: 1
+    localPosition: {x: 0.054573298, y: 0.058194973, z: -0.006909103}
+    localRotation: {x: 0.17216276, y: 0.02266562, z: 0.12854323, w: 0.97638255}
+    height: 0.4030525
+    radius: 0.076927304
+    name: CC_Base_Hip_Capsule
+    axis: 1
+    colliderTypes: 1
+    nativeRef: {fileID: 3197975531391336660}
+    magicaRef: {fileID: 0}
+    dynamicRef: {fileID: 0}
+  - transform: {fileID: 8599412173610139537}
+    isEnabled: 1
+    localPosition: {x: -0.054573383, y: 0.058194935, z: -0.006909103}
+    localRotation: {x: 0.17216273, y: -0.022665624, z: -0.12854323, w: 0.9763826}
+    height: 0.4030525
+    radius: 0.076927304
+    name: CC_Base_Hip_Capsule(0)
+    axis: 1
+    colliderTypes: 1
+    nativeRef: {fileID: 6826705114961000193}
+    magicaRef: {fileID: 0}
+    dynamicRef: {fileID: 0}
   cachedSelectedCollider:
     transform: {fileID: 0}
     isEnabled: 0
@@ -1313,9 +1677,31 @@ MonoBehaviour:
   magicaClothMeshes: []
   settings: []
   characterGUID: 5e878a7c2d09ac644ad2947a650eb8da
+--- !u!114 &348247863752922380
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3715182366574166389}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fff0960ef4ea6e04eac66b4a7fd2189d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_RigLayers:
+  - m_Rig: {fileID: 3867436133550105653}
+    m_Active: 1
+  m_Effectors: []
 --- !u!4 &3794022615196122669 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8365295519350668791, guid: 5e878a7c2d09ac644ad2947a650eb8da,
+    type: 3}
+  m_PrefabInstance: {fileID: 4562027109802834980}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &4090722021019917263 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 5e878a7c2d09ac644ad2947a650eb8da,
     type: 3}
   m_PrefabInstance: {fileID: 4562027109802834980}
   m_PrefabAsset: {fileID: 0}

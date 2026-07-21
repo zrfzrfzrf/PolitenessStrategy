@@ -2,19 +2,29 @@ using UnityEngine;
 
 public class PlayAudioOnStateEnter : StateMachineBehaviour
 {
-    public AudioClip audioClip; // Assign this in the Animator
-    private AudioSource audioSource;
+    public AudioClip audioClip;
+    AudioSource audioSource;
 
     override public void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
         if (audioSource == null)
         {
-            // Look for the AudioSource component on the character
             audioSource = animator.gameObject.GetComponent<AudioSource>();
             if (audioSource == null)
             {
-                Debug.LogError("No AudioSource found on the character!");
-                return;
+                audioSource = animator.gameObject.GetComponentInParent<AudioSource>();
+            }
+
+            if (audioSource == null)
+            {
+                audioSource = animator.gameObject.GetComponentInChildren<AudioSource>();
+            }
+
+            if (audioSource == null)
+            {
+                audioSource = animator.gameObject.AddComponent<AudioSource>();
+                audioSource.playOnAwake = false;
+                audioSource.spatialBlend = 1f;
             }
         }
 
