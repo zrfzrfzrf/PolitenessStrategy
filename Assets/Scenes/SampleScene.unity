@@ -1155,7 +1155,7 @@ PrefabInstance:
     - target: {fileID: 1999586636791462635, guid: 910ac157030bfbc46b03056cc501b342,
         type: 3}
       propertyPath: m_Name
-      value: ExciteOMeter_Manager
+      value: HR_Manager
       objectReference: {fileID: 0}
     - target: {fileID: 1999586637474210352, guid: 910ac157030bfbc46b03056cc501b342,
         type: 3}
@@ -1259,8 +1259,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 66c7a75e82ebe604a92235708ace077c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  forceRunInBackground: 1
+  useMonotonicSessionClock: 1
   autoStart: 1
   sessionId: test01
+  waitForRequiredStreams: 1
+  waitForFirstSamples: 1
+  streamWaitTimeoutSeconds: 0
 --- !u!4 &313975478 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7016089342739377454, guid: 0001b2b57b525c04fa122b3408c1eda0,
@@ -1574,6 +1579,14 @@ MonoBehaviour:
   StreamType: ExciteOMeter
   Devices: 0
   VariableType: 3
+  decodingMode: 0
+  autoDetectionSamples: 64
+  legacyPaddingRatio: 0.8
+  logRejectedSamples: 0
+  deviceTimestampSampleRateHz: 130
+  discardLeadingPacketZero: 1
+  fitSamplesToDevicePacketInterval: 1
+  maximumPacketRateDeviationFraction: 0.2
 --- !u!4 &515008312
 Transform:
   m_ObjectHideFlags: 0

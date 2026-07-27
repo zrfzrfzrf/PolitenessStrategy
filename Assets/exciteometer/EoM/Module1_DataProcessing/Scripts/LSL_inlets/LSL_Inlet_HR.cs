@@ -1,33 +1,66 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
+using Assets.LSL4Unity.Scripts;
 using UnityEngine;
 
 namespace ExciteOMeter
 {
     public class LSL_Inlet_HR : InletShortSamples
     {
-        void Start()
+        private readonly LslSessionTimestampMapper timestampMapper =
+            new LslSessionTimestampMapper("HeartRate");
+
+        private void OnEnable()
         {
-            // [optional] call this only, if your gameobject hosting this component
-            // got instantiated during runtime
-            
-            // registerAndLookUpStream();
+            EoM_Events.OnLoggingStateChanged += HandleLoggingStateChanged;
         }
 
-        /// <summary>
-            /// Override this method to implement whatever should happen with the samples...
-            /// IMPORTANT: Avoid heavy processing logic within this method, update a state and use
-            /// coroutines for more complexe processing tasks to distribute processing time over
-            /// several frames
-            /// </summary>
-            /// <param name="newSample"></param>
-            /// <param name="timeStamp"></param>
+        private void OnDisable()
+        {
+            EoM_Events.OnLoggingStateChanged -= HandleLoggingStateChanged;
+        }
+
+        public override void AStreamIsFound(LSLStreamInfoWrapper stream)
+        {
+            if (!isTheExpected(stream))
+            {
+                return;
+            }
+
+            timestampMapper.ResetStream();
+            base.AStreamIsFound(stream);
+            inlet.set_postprocessing(LSL.liblsl.processing_options_t.post_clocksync);
+        }
+
         protected override void Process(short[] newSample, double timeStamp)
         {
-            //TODO: The event only sends float[], all samples need to be parsed to float
-            EoM_Events.Send_OnDataReceived(VariableType, ExciteOMeterManager.GetTimestamp(), (float)newSample[0]);
+            if (ExciteOMeterManager.inPostProcessingStage
+                || !timestampMapper.TryGetSessionTimestamp(timeStamp, out double sessionTimestamp))
+            {
+                return;
+            }
 
-            LoggerController.instance.WriteLine(LogName.VariableHeartRate, ExciteOMeterManager.GetTimestampString() + "," + ExciteOMeterManager.ConvertFloatToString(newSample[0],0));
+            float value = newSample[0];
+            EoM_Events.Send_OnDataReceived(VariableType, (float)sessionTimestamp, value);
+            LoggerController.instance.WriteLine(
+                LogName.VariableHeartRate,
+                sessionTimestamp.ToString("F6", CultureInfo.InvariantCulture) + "," +
+                value.ToString("F0", CultureInfo.InvariantCulture));
+        }
+
+        private void HandleLoggingStateChanged(bool isLogging)
+        {
+            if (isLogging)
+            {
+                int discarded = DiscardQueuedSamples();
+                timestampMapper.BeginSession();
+                Debug.Log($"HeartRate cleared {discarded} queued LSL samples at Session start.");
+            }
+            else
+            {
+                timestampMapper.EndSession();
+            }
         }
     }
 }

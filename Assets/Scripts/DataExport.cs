@@ -20,16 +20,20 @@ public class DataExport : MonoBehaviour
     [SerializeField] string exportDirectory = @"D:\KTH\SummerIntern\Dataset";
 
     [Header("Session time and physiological signals")]
+    [Tooltip("When enabled, Path uses the EOM Session clock configured by AutoRecorder. Disable it to keep the independent elapsed-time export.")]
     [SerializeField] bool useSessionTime;
     [SerializeField] bool includePhysiologicalSignals;
 
     readonly List<PathSample> samples = new List<PathSample>();
     readonly List<ZoneEvent> zoneEvents = new List<ZoneEvent>();
-    float nextSampleTime;
+    readonly Queue<TimedSignalValue> ecgQueue = new Queue<TimedSignalValue>();
+    readonly Queue<TimedSignalValue> hrQueue = new Queue<TimedSignalValue>();
+    readonly Queue<TimedSignalValue> rmssdQueue = new Queue<TimedSignalValue>();
+    double nextSampleTime;
     bool isRecording;
     bool hasPreviousSample;
     Vector3 lastSamplePosition;
-    float lastSampleElapsed;
+    double lastSampleElapsed;
     float latestEcg;
     float latestHr;
     float latestRmssd;
@@ -47,12 +51,14 @@ public class DataExport : MonoBehaviour
     {
         ZoneEventBus.OnZoneEvent += HandleZoneEvent;
         EoM_Events.OnDataReceived += HandlePhysiologicalData;
+        EoM_Events.OnLoggingStateChanged += HandleLoggingStateChanged;
     }
 
     void OnDisable()
     {
         ZoneEventBus.OnZoneEvent -= HandleZoneEvent;
         EoM_Events.OnDataReceived -= HandlePhysiologicalData;
+        EoM_Events.OnLoggingStateChanged -= HandleLoggingStateChanged;
     }
 
     void Start()
@@ -96,7 +102,7 @@ public class DataExport : MonoBehaviour
             return;
         }
 
-        float elapsed = GetRecordingElapsedSeconds();
+        double elapsed = GetRecordingElapsedSeconds();
         if (elapsed < nextSampleTime)
         {
             return;
@@ -110,13 +116,11 @@ public class DataExport : MonoBehaviour
     {
         isRecording = true;
         hasPreviousSample = false;
-        nextSampleTime = useSessionTime ? 0f : Time.time;
+        nextSampleTime = useSessionTime ? 0.0 : Time.timeAsDouble;
 
         if (includePhysiologicalSignals)
         {
-            hasEcg = false;
-            hasHr = false;
-            hasRmssd = false;
+            ResetPhysiologicalSignals();
         }
     }
 
@@ -260,7 +264,7 @@ public class DataExport : MonoBehaviour
 
         if (useSessionTime && ExciteOMeterManager.currentlyRecordingSession)
         {
-            zoneEvent.ElapsedSeconds = ExciteOMeterManager.GetTimestamp();
+            zoneEvent.ElapsedSeconds = (float)ExciteOMeterManager.GetTimestampDouble();
         }
 
         zoneEvents.Add(zoneEvent);
@@ -273,8 +277,26 @@ public class DataExport : MonoBehaviour
             return;
         }
 
-        if (useSessionTime && !ExciteOMeterManager.currentlyRecordingSession)
+        if (useSessionTime)
         {
+            if (!ExciteOMeterManager.currentlyRecordingSession)
+            {
+                return;
+            }
+
+            switch (type)
+            {
+                case DataType.RawECG:
+                    ecgQueue.Enqueue(new TimedSignalValue(timestamp, value));
+                    break;
+                case DataType.HeartRate:
+                    hrQueue.Enqueue(new TimedSignalValue(timestamp, value));
+                    break;
+                case DataType.RMSSD:
+                    rmssdQueue.Enqueue(new TimedSignalValue(timestamp, value));
+                    break;
+            }
+
             return;
         }
 
@@ -295,11 +317,25 @@ public class DataExport : MonoBehaviour
         }
     }
 
-    float GetRecordingElapsedSeconds()
+    void HandleLoggingStateChanged(bool isLogging)
+    {
+        if (!isLogging || !useSessionTime || !includePhysiologicalSignals)
+        {
+            return;
+        }
+
+        // Values received while AutoRecorder was waiting only prove that the
+        // streams are ready. A new Path recording must not reuse those values.
+        nextSampleTime = 0.0;
+        hasPreviousSample = false;
+        ResetPhysiologicalSignals();
+    }
+
+    double GetRecordingElapsedSeconds()
     {
         return useSessionTime
-            ? ExciteOMeterManager.GetTimestamp()
-            : Time.time;
+            ? ExciteOMeterManager.GetTimestampDouble()
+            : Time.timeAsDouble;
     }
 
     static void AppendSignalValue(StringBuilder csv, bool hasValue, float value)
@@ -310,8 +346,13 @@ public class DataExport : MonoBehaviour
         }
     }
 
-    void RecordSample(float elapsed)
+    void RecordSample(double elapsed)
     {
+        if (useSessionTime && includePhysiologicalSignals)
+        {
+            AdvancePhysiologicalSignals(elapsed);
+        }
+
         Vector3 position = target.position;
         float speedMps = 0f;
 
@@ -319,10 +360,10 @@ public class DataExport : MonoBehaviour
         {
             Vector3 delta = position - lastSamplePosition;
             delta.y = 0f;
-            float deltaTime = elapsed - lastSampleElapsed;
+            double deltaTime = elapsed - lastSampleElapsed;
             if (deltaTime > 0f)
             {
-                speedMps = delta.magnitude / deltaTime;
+                speedMps = (float)(delta.magnitude / deltaTime);
             }
         }
 
@@ -351,7 +392,7 @@ public class DataExport : MonoBehaviour
 
     struct PathSample
     {
-        public float ElapsedSeconds;
+        public double ElapsedSeconds;
         public string LocalTimeIso8601;
         public Vector3 Position;
         public Quaternion Rotation;
@@ -365,5 +406,50 @@ public class DataExport : MonoBehaviour
         public bool HasEcg;
         public bool HasHr;
         public bool HasRmssd;
+    }
+
+    readonly struct TimedSignalValue
+    {
+        public TimedSignalValue(float timestamp, float value)
+        {
+            Timestamp = timestamp;
+            Value = value;
+        }
+
+        public float Timestamp { get; }
+        public float Value { get; }
+    }
+
+    void ResetPhysiologicalSignals()
+    {
+        ecgQueue.Clear();
+        hrQueue.Clear();
+        rmssdQueue.Clear();
+        hasEcg = false;
+        hasHr = false;
+        hasRmssd = false;
+    }
+
+    void AdvancePhysiologicalSignals(double elapsed)
+    {
+        AdvanceSignalQueue(ecgQueue, elapsed, ref latestEcg, ref hasEcg);
+        AdvanceSignalQueue(hrQueue, elapsed, ref latestHr, ref hasHr);
+        AdvanceSignalQueue(rmssdQueue, elapsed, ref latestRmssd, ref hasRmssd);
+    }
+
+    static void AdvanceSignalQueue(
+        Queue<TimedSignalValue> queue,
+        double elapsed,
+        ref float latestValue,
+        ref bool hasValue)
+    {
+        const double TimestampToleranceSeconds = 0.001;
+        while (queue.Count > 0
+            && queue.Peek().Timestamp <= elapsed + TimestampToleranceSeconds)
+        {
+            TimedSignalValue sample = queue.Dequeue();
+            latestValue = sample.Value;
+            hasValue = true;
+        }
     }
 }

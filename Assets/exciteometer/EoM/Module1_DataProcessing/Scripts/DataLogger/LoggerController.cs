@@ -31,7 +31,7 @@ namespace ExciteOMeter
 
         private static bool currentlyLogging = false;
         public static bool isFirstTimestampConfigured = false; // Whether the first timestamp has been configured or not
-        public static float firstTimestamp = 0.0f;
+        public static double firstTimestamp = 0.0;
 
         // Screenshots setup
         private bool recordingScreenshots = false;
@@ -216,7 +216,7 @@ namespace ExciteOMeter
             if(state == true)
             {
                 // Started logging
-                firstTimestamp = ExciteOMeterManager.GetTimestamp();
+                firstTimestamp = ExciteOMeterManager.GetClockTimeSeconds();
                 ExciteOMeterManager.DebugLog("First timestamp at " + firstTimestamp.ToString());
                 isFirstTimestampConfigured = true;
             }
@@ -224,7 +224,7 @@ namespace ExciteOMeter
             {
                 // Stopped logging
                 isFirstTimestampConfigured = false;
-                firstTimestamp = 0.0f;
+                firstTimestamp = 0.0;
                 ExciteOMeterManager.DebugLog("First timestamp back to " + firstTimestamp.ToString());
             }
 

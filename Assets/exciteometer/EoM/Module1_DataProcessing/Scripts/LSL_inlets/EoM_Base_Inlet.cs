@@ -130,10 +130,135 @@ namespace ExciteOMeter
         {
             // Do not collect signals from LSL when ExciteOMeter is postProcessing stage
             // Otherwise it will continue adding data on the CSV while wrapping up.
-            if(pullSamplesContinuously)
+            if(pullSamplesContinuously && !ExciteOMeterManager.inPostProcessingStage)
                 pullSamples();
         }
 
+    }
+
+    internal sealed class LslSessionTimestampMapper
+    {
+        private enum TimestampMode
+        {
+            Unknown,
+            LslSeconds,
+            DeviceNanoseconds,
+        }
+
+        private const double NanosecondTimestampThreshold = 1.0e12;
+        private const double NanosecondsToSeconds = 1.0e-9;
+        private const double PreSessionToleranceSeconds = 0.001;
+
+        private readonly string signalName;
+        private TimestampMode timestampMode;
+        private double sessionStartLslTimestamp;
+        private double deviceTimestampAnchor;
+        private double deviceSessionAnchor;
+        private double lastSessionTimestamp = double.NaN;
+        private bool hasSessionOrigin;
+        private bool hasDeviceAnchor;
+        private int rejectedOutOfOrderSamples;
+
+        public LslSessionTimestampMapper(string signalName)
+        {
+            this.signalName = signalName;
+        }
+
+        public void ResetStream()
+        {
+            timestampMode = TimestampMode.Unknown;
+            EndSession();
+        }
+
+        public void BeginSession()
+        {
+            double currentSessionTime = ExciteOMeterManager.GetTimestampDouble();
+            sessionStartLslTimestamp = liblsl.local_clock() - currentSessionTime;
+            hasSessionOrigin = true;
+            hasDeviceAnchor = false;
+            lastSessionTimestamp = double.NaN;
+            rejectedOutOfOrderSamples = 0;
+        }
+
+        public void EndSession()
+        {
+            hasSessionOrigin = false;
+            hasDeviceAnchor = false;
+            lastSessionTimestamp = double.NaN;
+            rejectedOutOfOrderSamples = 0;
+        }
+
+        public bool TryGetSessionTimestamp(double rawTimestamp, out double sessionTimestamp)
+        {
+            ResolveTimestampMode(rawTimestamp);
+
+            if (!ExciteOMeterManager.currentlyRecordingSession || !hasSessionOrigin)
+            {
+                sessionTimestamp = ExciteOMeterManager.GetTimestampDouble();
+                return true;
+            }
+
+            if (timestampMode == TimestampMode.DeviceNanoseconds)
+            {
+                if (!hasDeviceAnchor)
+                {
+                    deviceTimestampAnchor = rawTimestamp;
+                    deviceSessionAnchor = ExciteOMeterManager.GetTimestampDouble();
+                    hasDeviceAnchor = true;
+                }
+
+                sessionTimestamp = deviceSessionAnchor
+                    + (rawTimestamp - deviceTimestampAnchor) * NanosecondsToSeconds;
+            }
+            else
+            {
+                sessionTimestamp = rawTimestamp - sessionStartLslTimestamp;
+            }
+
+            if (sessionTimestamp < -PreSessionToleranceSeconds)
+            {
+                return false;
+            }
+
+            if (sessionTimestamp < 0.0)
+            {
+                sessionTimestamp = 0.0;
+            }
+
+            if (!double.IsNaN(lastSessionTimestamp)
+                && sessionTimestamp + PreSessionToleranceSeconds < lastSessionTimestamp)
+            {
+                rejectedOutOfOrderSamples++;
+                if (rejectedOutOfOrderSamples == 1
+                    || rejectedOutOfOrderSamples % 100 == 0)
+                {
+                    Debug.LogWarning(
+                        $"{signalName} received an out-of-order source timestamp; " +
+                        "the sample was omitted to preserve Session time ordering.");
+                }
+
+                return false;
+            }
+
+            lastSessionTimestamp = sessionTimestamp;
+            return true;
+        }
+
+        private void ResolveTimestampMode(double rawTimestamp)
+        {
+            if (timestampMode != TimestampMode.Unknown)
+            {
+                return;
+            }
+
+            timestampMode = rawTimestamp >= NanosecondTimestampThreshold
+                ? TimestampMode.DeviceNanoseconds
+                : TimestampMode.LslSeconds;
+
+            Debug.Log(timestampMode == TimestampMode.DeviceNanoseconds
+                ? $"{signalName} detected device nanosecond timestamps."
+                : $"{signalName} detected standard LSL timestamps in seconds.");
+        }
     }
 
     public abstract class InletFloatSamples : ExciteOMeterBaseInlet
@@ -141,6 +266,30 @@ namespace ExciteOMeter
         protected abstract void Process(float[] newSample, double timeStamp);
 
         protected float[] sample;
+
+        protected int DiscardQueuedSamples()
+        {
+            if (inlet == null || expectedChannels <= 0)
+            {
+                return 0;
+            }
+
+            int discarded = 0;
+            float[] discardBuffer = new float[Math.Max(1, expectedChannels)];
+            try
+            {
+                while (inlet.pull_sample(discardBuffer, 0.0f) != 0.0)
+                {
+                    discarded++;
+                }
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"Unable to fully clear queued LSL samples: {exception.Message}");
+            }
+
+            return discarded;
+        }
 
         protected override void pullSamples()
         {
@@ -213,6 +362,30 @@ namespace ExciteOMeter
         protected abstract void Process(int[] newSample, double timeStamp);
 
         protected int[] sample;
+
+        protected int DiscardQueuedSamples()
+        {
+            if (inlet == null || expectedChannels <= 0)
+            {
+                return 0;
+            }
+
+            int discarded = 0;
+            int[] discardBuffer = new int[Math.Max(1, expectedChannels)];
+            try
+            {
+                while (inlet.pull_sample(discardBuffer, 0.0f) != 0.0)
+                {
+                    discarded++;
+                }
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"Unable to fully clear queued LSL samples: {exception.Message}");
+            }
+
+            return discarded;
+        }
 
         protected override void pullSamples()
         {
@@ -322,6 +495,30 @@ namespace ExciteOMeter
         protected abstract void Process(short[] newSample, double timeStamp);
 
         protected short[] sample;
+
+        protected int DiscardQueuedSamples()
+        {
+            if (inlet == null || expectedChannels <= 0)
+            {
+                return 0;
+            }
+
+            int discarded = 0;
+            short[] discardBuffer = new short[Math.Max(1, expectedChannels)];
+            try
+            {
+                while (inlet.pull_sample(discardBuffer, 0.0f) != 0.0)
+                {
+                    discarded++;
+                }
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"Unable to fully clear queued LSL samples: {exception.Message}");
+            }
+
+            return discarded;
+        }
 
         protected override void pullSamples()
         {

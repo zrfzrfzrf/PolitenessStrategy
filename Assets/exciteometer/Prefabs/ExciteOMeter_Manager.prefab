@@ -151,6 +151,10 @@ MonoBehaviour:
   outputDataType: 5
   logIdentifier: 6
   multidimensionalInputData: 0
+  filterAbnormalRri: 1
+  minimumRriMs: 300
+  maximumRriMs: 2000
+  maximumMedianDeviationFraction: 0.2
 --- !u!114 &1402736874670845285
 MonoBehaviour:
   m_ObjectHideFlags: 0

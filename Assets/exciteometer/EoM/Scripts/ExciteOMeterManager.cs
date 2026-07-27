@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
@@ -15,6 +16,9 @@ namespace ExciteOMeter
 
         private static bool _currentlyRecordingSession = false;
         public static bool currentlyRecordingSession{ get => _currentlyRecordingSession; }
+
+        private static bool useMonotonicSessionClock = true;
+        public static bool UsingMonotonicSessionClock => useMonotonicSessionClock;
 
         [Tooltip("Whether you want the Excite-O-Meter log messages to be shown in Console in play mode.")]
         public bool showLogInConsole = false;
@@ -58,6 +62,17 @@ namespace ExciteOMeter
         public static void SetCurrentlyRecordingVariable(bool newState)
         {
             _currentlyRecordingSession = newState;
+        }
+
+        public static void ConfigureSessionClock(bool useMonotonicClock)
+        {
+            if (_currentlyRecordingSession)
+            {
+                Debug.LogWarning("The EOM Session clock cannot be changed while a Session is recording.");
+                return;
+            }
+
+            useMonotonicSessionClock = useMonotonicClock;
         }
 
         // Wrapper of debug log for EoM functions
@@ -189,18 +204,34 @@ namespace ExciteOMeter
 
         /// FORMAT STRINGS TO FOLLOW "," to separate columns and "." as decimal point.
 
-        public static float GetTimestamp()
+        public static double GetClockTimeSeconds()
         {
+            return useMonotonicSessionClock
+                ? Time.realtimeSinceStartupAsDouble
+                : Time.fixedTimeAsDouble;
+        }
+
+        public static double GetTimestampDouble()
+        {
+            double timestamp = GetClockTimeSeconds();
             if(LoggerController.isFirstTimestampConfigured)
             {
-                return Time.fixedTime - LoggerController.firstTimestamp;
+                timestamp -= LoggerController.firstTimestamp;
             }
-            return Time.fixedTime;
+
+            return timestamp < 0.0 ? 0.0 : timestamp;
+        }
+
+        public static float GetTimestamp()
+        {
+            return (float)GetTimestampDouble();
         }
 
         public static string GetTimestampString(int numDecimals=3)
         {
-            return GetTimestamp().ToString("F"+numDecimals.ToString()).Replace(",", ".");
+            return GetTimestampDouble().ToString(
+                "F" + numDecimals.ToString(CultureInfo.InvariantCulture),
+                CultureInfo.InvariantCulture);
         }
 
         public static string GetFormatTimestampDateTime()
