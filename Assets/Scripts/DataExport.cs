@@ -41,6 +41,8 @@ public class DataExport : MonoBehaviour
     bool hasHr;
     bool hasRmssd;
     public bool IsRecording => isRecording;
+    bool ShouldIncludePhysiologicalSignals =>
+        includePhysiologicalSignals || string.Equals(filePrefix, "Path_recording", StringComparison.Ordinal);
 
     public void SetTarget(Transform newTarget)
     {
@@ -118,7 +120,7 @@ public class DataExport : MonoBehaviour
         hasPreviousSample = false;
         nextSampleTime = useSessionTime ? 0.0 : Time.timeAsDouble;
 
-        if (includePhysiologicalSignals)
+        if (ShouldIncludePhysiologicalSignals)
         {
             ResetPhysiologicalSignals();
         }
@@ -148,7 +150,7 @@ public class DataExport : MonoBehaviour
         csv.Append("sample_index,");
         csv.Append(useSessionTime ? "session_time" : "elapsed_seconds");
         csv.Append(",local_time_iso8601,x,y,z,rotation_x,rotation_y,rotation_z,speed_mps,is_in_C,is_in_F,is_in_O");
-        if (includePhysiologicalSignals)
+        if (ShouldIncludePhysiologicalSignals)
         {
             csv.Append(",ECG,HR,RMSSD");
         }
@@ -171,7 +173,7 @@ public class DataExport : MonoBehaviour
             csv.Append(sample.IsInF ? '1' : '0').Append(',');
             csv.Append(sample.IsInO ? '1' : '0');
 
-            if (includePhysiologicalSignals)
+            if (ShouldIncludePhysiologicalSignals)
             {
                 csv.Append(',');
                 AppendSignalValue(csv, sample.HasEcg, sample.Ecg);
@@ -272,18 +274,13 @@ public class DataExport : MonoBehaviour
 
     void HandlePhysiologicalData(DataType type, float timestamp, float value)
     {
-        if (!includePhysiologicalSignals || !isRecording)
+        if (!ShouldIncludePhysiologicalSignals || !isRecording || !ExciteOMeterManager.currentlyRecordingSession)
         {
             return;
         }
 
         if (useSessionTime)
         {
-            if (!ExciteOMeterManager.currentlyRecordingSession)
-            {
-                return;
-            }
-
             switch (type)
             {
                 case DataType.RawECG:
@@ -319,14 +316,18 @@ public class DataExport : MonoBehaviour
 
     void HandleLoggingStateChanged(bool isLogging)
     {
-        if (!isLogging || !useSessionTime || !includePhysiologicalSignals)
+        if (!isLogging || !ShouldIncludePhysiologicalSignals)
         {
             return;
         }
 
         // Values received while AutoRecorder was waiting only prove that the
         // streams are ready. A new Path recording must not reuse those values.
-        nextSampleTime = 0.0;
+        if (useSessionTime)
+        {
+            nextSampleTime = 0.0;
+        }
+
         hasPreviousSample = false;
         ResetPhysiologicalSignals();
     }
@@ -348,7 +349,7 @@ public class DataExport : MonoBehaviour
 
     void RecordSample(double elapsed)
     {
-        if (useSessionTime && includePhysiologicalSignals)
+        if (useSessionTime && ShouldIncludePhysiologicalSignals)
         {
             AdvancePhysiologicalSignals(elapsed);
         }
