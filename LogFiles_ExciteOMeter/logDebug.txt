@@ -132,3 +132,7 @@ datetime,Event
 260727094913.348,New App Execution
 datetime,Event
 260727095107.959,New App Execution
+datetime,Event
+260806104005.559,New App Execution
+260806104017.156,ExciteOMeter >> No incoming data RRInterval was found to calculate feature SDNN
+260806104027.152,ExciteOMeter >> No incoming data RRInterval was found to calculate feature SDNN

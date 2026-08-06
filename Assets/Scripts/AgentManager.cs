@@ -6,6 +6,8 @@ public class AgentManager : MonoBehaviour
     [SerializeField] Transform visualSlot;
     [SerializeField] AgentDefinition currentAgent;
     [SerializeField] bool instantiateOnAwake = true;
+    [SerializeField] AgentDefinition[] availableAgents;
+    [SerializeField] int selectedAgentIndex;
 
     GameObject currentVisual;
     Animator currentAnimator;
@@ -93,5 +95,16 @@ public class AgentManager : MonoBehaviour
         {
             DestroyImmediate(currentVisual);
         }
+    }
+
+    public void SelectAgentByIndex(int index)
+    {
+        if (availableAgents == null || availableAgents.Length == 0)
+        {
+            return;
+        }
+
+        selectedAgentIndex = Mathf.Clamp(index, 0, availableAgents.Length - 1);
+        SetCurrentAgent(availableAgents[selectedAgentIndex]);
     }
 }

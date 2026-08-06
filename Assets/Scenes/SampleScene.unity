@@ -7010,27 +7010,27 @@ PrefabInstance:
     - target: {fileID: 2514675399181695721, guid: f54012181eacade4ea242c65f804720f,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0
+      value: 1.44
       objectReference: {fileID: 0}
     - target: {fileID: 2514675399181695721, guid: f54012181eacade4ea242c65f804720f,
         type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.9975811
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2514675399181695721, guid: f54012181eacade4ea242c65f804720f,
         type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2514675399181695721, guid: f54012181eacade4ea242c65f804720f,
         type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0.06951234
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2514675399181695721, guid: f54012181eacade4ea242c65f804720f,
         type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2514675399181695721, guid: f54012181eacade4ea242c65f804720f,
         type: 3}
@@ -7040,7 +7040,7 @@ PrefabInstance:
     - target: {fileID: 2514675399181695721, guid: f54012181eacade4ea242c65f804720f,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: -7.972
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2514675399181695721, guid: f54012181eacade4ea242c65f804720f,
         type: 3}
@@ -8868,6 +8868,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   stayAtCTimeoutSeconds: 8
   agentManager: {fileID: 2137114097}
+  strategyPlan: {fileID: 11400000, guid: 63b2459f34c9d89499a9f3ffe953a5b2, type: 2}
   enableResponses: 1
   onStateChanged:
     m_PersistentCalls:
@@ -8885,8 +8886,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   visualSlot: {fileID: 999470020}
-  currentAgent: {fileID: 11400000, guid: 813d0d5bceb73f64fa7975e2b7415718, type: 2}
+  currentAgent: {fileID: 11400000, guid: 081329c5f3a542246bb8b9d079b2902f, type: 2}
   instantiateOnAwake: 1
+  availableAgents:
+  - {fileID: 11400000, guid: 813d0d5bceb73f64fa7975e2b7415718, type: 2}
+  - {fileID: 11400000, guid: 5eaaa8c2122f702488ff3062adb3235a, type: 2}
+  - {fileID: 11400000, guid: 081329c5f3a542246bb8b9d079b2902f, type: 2}
+  - {fileID: 11400000, guid: 520ef30fdfd7e754ea799f2e080b88ef, type: 2}
+  - {fileID: 11400000, guid: 704d5001d6233dc40ba46bd8d5567874, type: 2}
+  - {fileID: 11400000, guid: 28d170b1b188ada43aee7cb52e6975c4, type: 2}
+  selectedAgentIndex: 2
 --- !u!114 &2137114098
 MonoBehaviour:
   m_ObjectHideFlags: 0

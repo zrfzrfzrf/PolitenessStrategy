@@ -20,6 +20,12 @@ public class AgentAttitudeController : MonoBehaviour
         Ignore
     }
 
+    public enum FResponseStrategy
+    {
+        WelcomeBack,
+        WaitingForYou
+    }
+
     [Serializable]
     public class AttitudeState
     {
@@ -32,15 +38,18 @@ public class AgentAttitudeController : MonoBehaviour
 
     [SerializeField, Min(0.1f)] float stayAtCTimeoutSeconds = 8f;
     [SerializeField] AgentManager agentManager;
+    [SerializeField] StrategyPlan strategyPlan;
     [SerializeField] bool enableResponses = true;
     [SerializeField] AttitudeStateEvent onStateChanged;
 
-    const int TrialCount = 9;
+    const int DefaultTrialCount = 9;
 
-    readonly int[] trialOrder = new int[TrialCount];
+    int[] trialOrder = new int[0];
 
     Attitude currentAttitude;
     Attitude currentTrialEnterCAttitude;
+    FResponseStrategy currentDirectFStrategy;
+    FResponseStrategy currentIndirectFStrategy;
     Phase currentPhase;
     bool isPlayerInC;
     bool isTerminal;
@@ -54,11 +63,11 @@ public class AgentAttitudeController : MonoBehaviour
     public Phase CurrentPhase => currentPhase;
     public bool IsTerminal => isTerminal;
     public bool IsPlayerInC => isPlayerInC;
-    public int TotalTrials => TrialCount;
-    public int CompletedTrialCount => Mathf.Min(currentTrialIndex, TrialCount);
-    public int CurrentTrialNumber => isTerminal && currentTrialIndex >= TrialCount
-        ? TrialCount
-        : Mathf.Min(currentTrialIndex + 1, TrialCount);
+    public int TotalTrials => GetTrialCount();
+    public int CompletedTrialCount => Mathf.Min(currentTrialIndex, TotalTrials);
+    public int CurrentTrialNumber => isTerminal && currentTrialIndex >= TotalTrials
+        ? TotalTrials
+        : Mathf.Min(currentTrialIndex + 1, TotalTrials);
 
     void Awake()
     {
@@ -112,11 +121,16 @@ public class AgentAttitudeController : MonoBehaviour
         {
             isTerminal = true;
             currentPhase = Phase.Praise;
-            Debug.Log("All 9 attitude trials are complete.");
+            Debug.Log($"All {TotalTrials} attitude trials are complete.");
             return;
         }
 
-        DecodeTrialId(trialOrder[currentTrialIndex], out currentAttitude, out currentTrialEnterCAttitude);
+        GetTrialConfig(
+            currentTrialIndex,
+            out currentAttitude,
+            out currentTrialEnterCAttitude,
+            out currentDirectFStrategy,
+            out currentIndirectFStrategy);
         currentPhase = Phase.Invitation;
         isPlayerInC = false;
         isTerminal = false;
@@ -124,7 +138,8 @@ public class AgentAttitudeController : MonoBehaviour
 
         Debug.Log(
             $"Starting trial {GetProgressLabel()}: " +
-            $"Invitation={currentAttitude}, EnterC={currentTrialEnterCAttitude}");
+            $"Invitation={currentAttitude}, EnterC={currentTrialEnterCAttitude}, " +
+            $"DirectF={currentDirectFStrategy}, IndirectF={currentIndirectFStrategy}");
 
         ResetAnimatorForNewTrial();
         NotifyStateChanged("Trial started");
@@ -176,23 +191,29 @@ public class AgentAttitudeController : MonoBehaviour
         NotifyStateChanged(skippedEnterC
             ? "Entered F directly; EnterC strategy skipped"
             : "Entered F");
-        PlayTerminalResponse();
+        PlayFResponse(skippedEnterC);
         CompleteTrialAndAdvance("Praise");
     }
 
     void StartNewSession()
     {
-        for (int i = 0; i < TrialCount; i++)
+        int trialCount = GetTrialCount();
+        trialOrder = new int[trialCount];
+
+        for (int i = 0; i < trialCount; i++)
         {
             trialOrder[i] = i;
         }
 
-        for (int i = trialOrder.Length - 1; i > 0; i--)
+        if (ShouldShuffleTrials())
         {
-            int swapIndex = UnityEngine.Random.Range(0, i + 1);
-            int temp = trialOrder[i];
-            trialOrder[i] = trialOrder[swapIndex];
-            trialOrder[swapIndex] = temp;
+            for (int i = trialOrder.Length - 1; i > 0; i--)
+            {
+                int swapIndex = UnityEngine.Random.Range(0, i + 1);
+                int temp = trialOrder[i];
+                trialOrder[i] = trialOrder[swapIndex];
+                trialOrder[swapIndex] = temp;
+            }
         }
 
         currentTrialIndex = 0;
@@ -209,17 +230,64 @@ public class AgentAttitudeController : MonoBehaviour
 
     bool IsSessionComplete()
     {
-        return currentTrialIndex >= TrialCount;
+        return currentTrialIndex >= TotalTrials;
     }
 
     string GetProgressLabel()
     {
-        return $"{CurrentTrialNumber}/{TrialCount}";
+        return $"{CurrentTrialNumber}/{TotalTrials}";
     }
 
-    static void DecodeTrialId(int trialId, out Attitude initialAttitude, out Attitude enterCAttitude)
+    int GetTrialCount()
     {
-        if (trialId < 0 || trialId >= TrialCount)
+        return HasStrategyPlan() ? strategyPlan.TrialCount : DefaultTrialCount;
+    }
+
+    bool HasStrategyPlan()
+    {
+        return strategyPlan != null && strategyPlan.TrialCount > 0;
+    }
+
+    bool ShouldShuffleTrials()
+    {
+        return !HasStrategyPlan() || strategyPlan.ShuffleOnStart;
+    }
+
+    void GetTrialConfig(
+        int trialIndex,
+        out Attitude initialAttitude,
+        out Attitude enterCAttitude,
+        out FResponseStrategy directFStrategy,
+        out FResponseStrategy indirectFStrategy)
+    {
+        int orderedTrialIndex = trialOrder[trialIndex];
+        directFStrategy = FResponseStrategy.WelcomeBack;
+        indirectFStrategy = FResponseStrategy.WaitingForYou;
+
+        if (HasStrategyPlan())
+        {
+            StrategyTrial trial = strategyPlan.Trials[orderedTrialIndex];
+            if (trial == null)
+            {
+                Debug.LogWarning($"StrategyPlan {strategyPlan.name} has an empty trial at index {orderedTrialIndex}. Using Polite -> Polite with default F strategies.");
+                initialAttitude = Attitude.Polite;
+                enterCAttitude = Attitude.Polite;
+                return;
+            }
+
+            initialAttitude = trial.invitationAttitude;
+            enterCAttitude = trial.enterCAttitude;
+            directFStrategy = trial.directFStrategy;
+            indirectFStrategy = trial.indirectFStrategy;
+            return;
+        }
+
+        DecodeDefaultTrialId(orderedTrialIndex, out initialAttitude, out enterCAttitude);
+    }
+
+    static void DecodeDefaultTrialId(int trialId, out Attitude initialAttitude, out Attitude enterCAttitude)
+    {
+        if (trialId < 0 || trialId >= DefaultTrialCount)
         {
             throw new ArgumentOutOfRangeException(nameof(trialId), trialId, "Trial id must be between 0 and 8.");
         }
@@ -268,11 +336,11 @@ public class AgentAttitudeController : MonoBehaviour
         isTrialCompleting = true;
         currentTrialIndex++;
 
-        Debug.Log($"Trial completed with {outcome}. Finished {CompletedTrialCount}/{TrialCount}.");
+        Debug.Log($"Trial completed with {outcome}. Finished {CompletedTrialCount}/{TotalTrials}.");
 
         if (IsSessionComplete())
         {
-            Debug.Log("All 9 attitude trials are complete.");
+            Debug.Log($"All {TotalTrials} attitude trials are complete.");
             return;
         }
 
@@ -383,6 +451,52 @@ public class AgentAttitudeController : MonoBehaviour
 
         animator.CrossFade(Animator.StringToHash(stateName), profile.CrossFadeSeconds, 0, 0f);
         Debug.Log($"{GetAgentName()} playing animation: {stateName} ({currentPhase} / {currentAttitude})");
+    }
+
+    void PlayFResponse(bool skippedEnterC)
+    {
+        if (!enableResponses)
+        {
+            return;
+        }
+
+        Animator animator = GetAnimator();
+        AgentAnimationProfile profile = GetAnimationProfile();
+
+        if (animator == null || profile == null)
+        {
+            return;
+        }
+
+        FResponseStrategy strategy = skippedEnterC
+            ? currentDirectFStrategy
+            : currentIndirectFStrategy;
+
+        string stateName = GetFStateName(strategy, profile);
+        if (string.IsNullOrEmpty(stateName))
+        {
+            return;
+        }
+
+        animator.CrossFade(Animator.StringToHash(stateName), profile.CrossFadeSeconds, 0, 0f);
+        Debug.Log($"{GetAgentName()} playing F strategy: {strategy} -> {stateName} ({(skippedEnterC ? "Direct F" : "Indirect F")})");
+    }
+
+    static string GetFStateName(FResponseStrategy strategy, AgentAnimationProfile profile)
+    {
+        switch (strategy)
+        {
+            case FResponseStrategy.WelcomeBack:
+                return string.IsNullOrEmpty(profile.DirectFState)
+                    ? profile.PraiseState
+                    : profile.DirectFState;
+            case FResponseStrategy.WaitingForYou:
+                return string.IsNullOrEmpty(profile.IndirectFState)
+                    ? profile.PraiseState
+                    : profile.IndirectFState;
+            default:
+                return profile.PraiseState;
+        }
     }
 
     void ResetAnimatorForNewTrial()

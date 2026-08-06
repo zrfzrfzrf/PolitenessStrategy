@@ -10,12 +10,16 @@ public class AgentAnimationProfile : ScriptableObject
     [SerializeField] string hostileState = "Come_here";
     [SerializeField] string praiseState = "Welcome_back";
     [SerializeField] string ignoreState = "";
+    [SerializeField] string directFState = "Welcome_back";
+    [SerializeField] string indirectFState = "This_Place_Is_Waiting_For_You";
     [SerializeField, Min(0f)] float crossFadeSeconds = 0.05f;
 
     public RuntimeAnimatorController Controller => controller;
     public string IdleState => idleState;
     public string PraiseState => praiseState;
     public string IgnoreState => ignoreState;
+    public string DirectFState => directFState;
+    public string IndirectFState => indirectFState;
     public float CrossFadeSeconds => crossFadeSeconds;
 
     public string GetStateName(AgentAttitudeController.Attitude attitude)
