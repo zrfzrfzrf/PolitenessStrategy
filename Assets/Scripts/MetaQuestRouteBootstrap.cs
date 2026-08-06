@@ -28,6 +28,7 @@ public static class MetaQuestRouteBootstrap
         if (vrRig != null)
         {
             ConfigureVrRig(vrRig);
+            SuppressBrokenActiveStateSelectors(vrRig);
         }
 
         if (keyboardPlayer != null)
@@ -39,6 +40,32 @@ public static class MetaQuestRouteBootstrap
         {
             Debug.LogError(
                 $"Could not find {VrRigName} or {KeyboardTestPlayerName}; route tracking was not configured.");
+        }
+    }
+
+    static void SuppressBrokenActiveStateSelectors(GameObject vrRig)
+    {
+        MonoBehaviour[] behaviours = vrRig.GetComponentsInChildren<MonoBehaviour>(true);
+        for (int i = 0; i < behaviours.Length; i++)
+        {
+            MonoBehaviour behaviour = behaviours[i];
+            if (behaviour == null || behaviour.GetType().Name != "ActiveStateSelector")
+            {
+                continue;
+            }
+
+            var activeStateField = behaviour.GetType().GetField(
+                "_activeState",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            if (activeStateField == null)
+            {
+                continue;
+            }
+
+            if (activeStateField.GetValue(behaviour) == null)
+            {
+                behaviour.enabled = false;
+            }
         }
     }
 

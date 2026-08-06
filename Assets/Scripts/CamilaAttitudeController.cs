@@ -56,6 +56,7 @@ public class CamilaAttitudeController : MonoBehaviour
     public Phase CurrentPhase => currentPhase;
     public bool IsTerminal => isTerminal;
     public bool IsPlayerInC => isPlayerInC;
+    public bool IsWaitingForNextTrial => waitingForNextTrial;
     public AttitudeTrialSession.TrialDefinition CurrentTrial => currentTrial;
 
     void Awake()
