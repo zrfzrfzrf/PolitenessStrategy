@@ -1384,6 +1384,9 @@ MonoBehaviour:
   exportKey: 112
   filePrefix: Path_recording
   exportDirectory: D:\KTH\SummerIntern\Dataset
+  exportSubdirectory: 
+  writePhysiologicalCopy: 1
+  physiologicalCopySubdirectory: ecg_merged
   useSessionTime: 0
   includePhysiologicalSignals: 0
 --- !u!1 &410087039
@@ -2868,7 +2871,10 @@ MonoBehaviour:
   exportKey: 112
   filePrefix: Path_recording_test
   exportDirectory: D:\KTH\SummerIntern\Dataset
-  useSessionTime: 1
+  exportSubdirectory: 
+  writePhysiologicalCopy: 1
+  physiologicalCopySubdirectory: ecg_merged
+  useSessionTime: 0
   includePhysiologicalSignals: 1
 --- !u!4 &1079186462 stripped
 Transform:
