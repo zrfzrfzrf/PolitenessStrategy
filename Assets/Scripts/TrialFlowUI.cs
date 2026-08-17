@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Events;
 using UnityEngine.UI;
@@ -12,7 +12,7 @@ public class TrialFlowUI : MonoBehaviour
     const string CenterEyeName = "CenterEyeAnchor";
     const float StartPromptSeconds = 3f;
 
-    static readonly Vector3 StartCenter = Vector3.zero;
+    Vector3 startCenter = Vector3.zero;
     const float StartRadius = 1f;
 
     Text promptText;
@@ -21,6 +21,8 @@ public class TrialFlowUI : MonoBehaviour
     Transform playerTransform;
     float startPromptUntil;
     string startPromptMessage = string.Empty;
+
+    bool isStarted = false;
 
     void Awake()
     {
@@ -53,15 +55,37 @@ public class TrialFlowUI : MonoBehaviour
 
     void Start()
     {
-        // Controllers begin trial 1 in Awake; show the opening subtitle once UI is ready.
-        if (!IsWaitingForNextTrial() && !IsSessionComplete())
+        GameObject vrRig = GameObject.Find("OVRCameraRigInteraction");
+        if (vrRig != null)
         {
-            ShowTrailStartPrompt();
+            startCenter = new Vector3(vrRig.transform.position.x, 0f, vrRig.transform.position.z);
+        }
+
+        DrawStartZoneCircle();
+    }
+
+    void DrawStartZoneCircle()
+    {
+        LineRenderer lr = gameObject.AddComponent<LineRenderer>();
+        lr.useWorldSpace = true;
+        lr.loop = true;
+        lr.startWidth = lr.endWidth = 0.04f;
+        lr.material = new Material(Shader.Find("Sprites/Default"));
+        lr.startColor = lr.endColor = new Color(0f, 0.8f, 1f, 0.8f);
+
+        lr.positionCount = 64;
+        for (int i = 0; i < 64; i++)
+        {
+            float angle = i * 2f * Mathf.PI / 64;
+            float x = startCenter.x + Mathf.Cos(angle) * StartRadius;
+            float z = startCenter.z + Mathf.Sin(angle) * StartRadius;
+            lr.SetPosition(i, new Vector3(x, 0.02f, z));
         }
     }
 
     void OnRestartClicked()
     {
+        isStarted = true;
         if (agentController != null)
         {
             agentController.OnRestartClicked();
@@ -79,7 +103,7 @@ public class TrialFlowUI : MonoBehaviour
 
     void Update()
     {
-        if (promptText == null)
+        if (promptText == null || !isStarted)
         {
             return;
         }
@@ -199,14 +223,6 @@ public class TrialFlowUI : MonoBehaviour
             return true;
         }
 
-        GameObject keyboardPlayer = GameObject.Find(KeyboardPlayerName);
-        if (keyboardPlayer != null)
-        {
-            playerTransform = keyboardPlayer.transform;
-            player = playerTransform;
-            return true;
-        }
-
         GameObject vrRig = GameObject.Find(VrRigName);
         if (vrRig != null)
         {
@@ -221,6 +237,14 @@ public class TrialFlowUI : MonoBehaviour
             }
         }
 
+        GameObject keyboardPlayer = GameObject.Find(KeyboardPlayerName);
+        if (keyboardPlayer != null)
+        {
+            playerTransform = keyboardPlayer.transform;
+            player = playerTransform;
+            return true;
+        }
+
         if (Camera.main != null)
         {
             playerTransform = Camera.main.transform;
@@ -232,10 +256,10 @@ public class TrialFlowUI : MonoBehaviour
         return false;
     }
 
-    static bool IsInStartZone(Vector3 position)
+    bool IsInStartZone(Vector3 position)
     {
-        float dx = position.x - StartCenter.x;
-        float dz = position.z - StartCenter.z;
+        float dx = position.x - startCenter.x;
+        float dz = position.z - startCenter.z;
         return dx * dx + dz * dz <= StartRadius * StartRadius;
     }
 
@@ -245,7 +269,7 @@ public class TrialFlowUI : MonoBehaviour
         forward.y = 0f;
         if (forward.sqrMagnitude < 0.0001f)
         {
-            return true;
+            return false;
         }
 
         return Vector3.Dot(forward.normalized, Vector3.forward) < 0f;

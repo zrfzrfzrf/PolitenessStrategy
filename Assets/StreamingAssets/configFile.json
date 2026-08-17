@@ -1,7 +1,7 @@
 {
     "logSettings": {
         "sessionId": "test01",
-        "mainLogFolder": "C:/Users/Richard Zhang/Desktop/2026 summer internship/PolitenessStrategy/Assets/../LogFiles_ExciteOMeter/",
+        "mainLogFolder": "F:/unity-/PolitenessStrategy_clean/Assets/../LogFiles_ExciteOMeter/",
         "mainDebugFilename": "logDebug.txt",
         "sessionJsonFilename": "sessionData.json",
         "recordScreenshots": false,
