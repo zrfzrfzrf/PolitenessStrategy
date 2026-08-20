@@ -15,7 +15,15 @@ public class TrialFlowUI : MonoBehaviour
     Vector3 startCenter = Vector3.zero;
     const float StartRadius = 1f;
 
+    static readonly Color ZoneCColor = new Color(0.2f, 0.75f, 1f);
+    static readonly Color ZoneOColor = new Color(1f, 0.85f, 0.2f);
+    static readonly Color ZoneFColor = new Color(0.3f, 0.9f, 0.35f);
+    static readonly Color ZoneOffColor = new Color(0.18f, 0.18f, 0.18f, 0.7f);
+
     Text promptText;
+    Image zoneCLight;
+    Image zoneOLight;
+    Image zoneFLight;
     AgentAttitudeController agentController;
     CamilaAttitudeController camilaController;
     Transform playerTransform;
@@ -48,6 +56,7 @@ public class TrialFlowUI : MonoBehaviour
         canvasObject.AddComponent<GraphicRaycaster>();
 
         promptText = MakePrompt(canvasObject.transform);
+        MakeZoneLights(canvasObject.transform);
 
         MakeButton(canvasObject.transform, "Next_trail", new Vector2(-200f, 30f), OnNextTrailForced);
         MakeButton(canvasObject.transform, "Start/Restart", new Vector2(200f, 30f), OnRestartClicked);
@@ -103,6 +112,8 @@ public class TrialFlowUI : MonoBehaviour
 
     void Update()
     {
+        UpdateZoneLights();
+
         if (promptText == null || !isStarted)
         {
             return;
@@ -121,6 +132,80 @@ public class TrialFlowUI : MonoBehaviour
         }
 
         SetPrompt(string.Empty);
+    }
+
+    void UpdateZoneLights()
+    {
+        SetZoneLight(zoneCLight, ZoneEventBus.InC, ZoneCColor);
+        SetZoneLight(zoneOLight, ZoneEventBus.InO, ZoneOColor);
+        SetZoneLight(zoneFLight, ZoneEventBus.InF, ZoneFColor);
+    }
+
+    static void SetZoneLight(Image light, bool on, Color onColor)
+    {
+        if (light == null)
+        {
+            return;
+        }
+
+        light.color = on ? onColor : ZoneOffColor;
+    }
+
+    void MakeZoneLights(Transform parent)
+    {
+        GameObject row = new GameObject("ZoneLights");
+        row.transform.SetParent(parent, false);
+
+        RectTransform rowRect = row.AddComponent<RectTransform>();
+        rowRect.anchorMin = new Vector2(1f, 1f);
+        rowRect.anchorMax = new Vector2(1f, 1f);
+        rowRect.pivot = new Vector2(1f, 1f);
+        rowRect.anchoredPosition = new Vector2(-24f, -24f);
+        rowRect.sizeDelta = new Vector2(220f, 72f);
+
+        HorizontalLayoutGroup layout = row.AddComponent<HorizontalLayoutGroup>();
+        layout.spacing = 16f;
+        layout.childAlignment = TextAnchor.MiddleRight;
+        layout.childControlWidth = false;
+        layout.childControlHeight = false;
+        layout.childForceExpandWidth = false;
+        layout.childForceExpandHeight = false;
+
+        zoneCLight = MakeZoneLight(row.transform, "C");
+        zoneOLight = MakeZoneLight(row.transform, "O");
+        zoneFLight = MakeZoneLight(row.transform, "F");
+        UpdateZoneLights();
+    }
+
+    static Image MakeZoneLight(Transform parent, string label)
+    {
+        GameObject go = new GameObject("Light_" + label);
+        go.transform.SetParent(parent, false);
+
+        Image image = go.AddComponent<Image>();
+        image.color = ZoneOffColor;
+
+        RectTransform rect = go.GetComponent<RectTransform>();
+        rect.sizeDelta = new Vector2(56f, 56f);
+
+        GameObject textGo = new GameObject("Label");
+        textGo.transform.SetParent(go.transform, false);
+        Text text = textGo.AddComponent<Text>();
+        text.text = label;
+        text.fontSize = 28;
+        text.alignment = TextAnchor.MiddleCenter;
+        text.color = Color.white;
+        text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+
+        Outline outline = textGo.AddComponent<Outline>();
+        outline.effectColor = new Color(0f, 0f, 0f, 0.85f);
+        outline.effectDistance = new Vector2(1.5f, -1.5f);
+
+        RectTransform textRect = textGo.GetComponent<RectTransform>();
+        textRect.anchorMin = Vector2.zero;
+        textRect.anchorMax = Vector2.one;
+        textRect.offsetMin = textRect.offsetMax = Vector2.zero;
+        return image;
     }
 
     void UpdateWaitingPrompt()
