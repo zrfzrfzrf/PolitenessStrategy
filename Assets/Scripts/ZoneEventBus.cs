@@ -51,6 +51,8 @@ public struct ZoneEvent
 {
     public float ElapsedSeconds;
     public string LocalTimeIso8601;
+    public Vector3 Position;
+    public bool HasPosition;
     public string Zone;
     public string EventType;
 }

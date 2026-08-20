@@ -1,15 +1,37 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 public class TrialFlowUI : MonoBehaviour
 {
+    const string ReturnPrompt = "This trail is over. Please return to the starting point.";
+    const string RotatePrompt = "Please rotate and face forward.";
+    const string KeyboardPlayerName = "player_for_keyboard_test";
+    const string VrRigName = "OVRCameraRigInteraction";
+    const string CenterEyeName = "CenterEyeAnchor";
+    const float StartPromptSeconds = 3f;
+
+    Vector3 startCenter = Vector3.zero;
+    const float StartRadius = 1f;
+
+    Text promptText;
+    AgentAttitudeController agentController;
+    CamilaAttitudeController camilaController;
+    Transform playerTransform;
+    float startPromptUntil;
+    string startPromptMessage = string.Empty;
+
+    bool isStarted = false;
+
     void Awake()
     {
-        AgentAttitudeController agentController = FindObjectOfType<AgentAttitudeController>();
-        if (agentController == null)
+        agentController = FindObjectOfType<AgentAttitudeController>();
+        camilaController = FindObjectOfType<CamilaAttitudeController>();
+
+        if (agentController == null && camilaController == null)
         {
-            Debug.LogWarning("TrialFlowUI could not find an AgentAttitudeController.");
+            Debug.LogWarning("TrialFlowUI could not find AgentAttitudeController or CamilaAttitudeController.");
             return;
         }
 
@@ -25,11 +47,272 @@ public class TrialFlowUI : MonoBehaviour
         canvasObject.AddComponent<CanvasScaler>();
         canvasObject.AddComponent<GraphicRaycaster>();
 
-        MakeButton(canvasObject.transform, "next-trial", new Vector2(-200f, 30f), agentController.OnNextTrialClicked);
-        MakeButton(canvasObject.transform, "restart", new Vector2(200f, 30f), agentController.OnRestartClicked);
+        promptText = MakePrompt(canvasObject.transform);
+
+        MakeButton(canvasObject.transform, "next_trail", new Vector2(-200f, 30f), OnNextTrailForced);
+        MakeButton(canvasObject.transform, "restart", new Vector2(200f, 30f), OnRestartClicked);
     }
 
-    static void MakeButton(Transform parent, string label, Vector2 pos, UnityEngine.Events.UnityAction onClick)
+    void Start()
+    {
+        GameObject vrRig = GameObject.Find("OVRCameraRigInteraction");
+        if (vrRig != null)
+        {
+            startCenter = new Vector3(vrRig.transform.position.x, 0f, vrRig.transform.position.z);
+        }
+
+        DrawStartZoneCircle();
+    }
+
+    void DrawStartZoneCircle()
+    {
+        LineRenderer lr = gameObject.AddComponent<LineRenderer>();
+        lr.useWorldSpace = true;
+        lr.loop = true;
+        lr.startWidth = lr.endWidth = 0.04f;
+        lr.material = new Material(Shader.Find("Sprites/Default"));
+        lr.startColor = lr.endColor = new Color(0f, 0.8f, 1f, 0.8f);
+
+        lr.positionCount = 64;
+        for (int i = 0; i < 64; i++)
+        {
+            float angle = i * 2f * Mathf.PI / 64;
+            float x = startCenter.x + Mathf.Cos(angle) * StartRadius;
+            float z = startCenter.z + Mathf.Sin(angle) * StartRadius;
+            lr.SetPosition(i, new Vector3(x, 0.02f, z));
+        }
+    }
+
+    void OnRestartClicked()
+    {
+        isStarted = true;
+        if (agentController != null)
+        {
+            agentController.OnRestartClicked();
+        }
+        else if (camilaController != null)
+        {
+            camilaController.OnRestartClicked();
+        }
+
+        if (!IsSessionComplete())
+        {
+            ShowTrailStartPrompt();
+        }
+    }
+
+    void Update()
+    {
+        if (promptText == null || !isStarted)
+        {
+            return;
+        }
+
+        if (IsWaitingForNextTrial())
+        {
+            UpdateWaitingPrompt();
+            return;
+        }
+
+        if (Time.time < startPromptUntil)
+        {
+            SetPrompt(startPromptMessage);
+            return;
+        }
+
+        SetPrompt(string.Empty);
+    }
+
+    void UpdateWaitingPrompt()
+    {
+        if (!TryGetPlayer(out Transform player))
+        {
+            SetPrompt(ReturnPrompt);
+            return;
+        }
+
+        if (!IsInStartZone(player.position))
+        {
+            SetPrompt(ReturnPrompt);
+            return;
+        }
+
+        if (IsFacingNegativeZ(player))
+        {
+            SetPrompt(RotatePrompt);
+            return;
+        }
+
+        StartNextTrail();
+    }
+
+    void OnNextTrailForced()
+    {
+        StartNextTrail();
+    }
+
+    void StartNextTrail()
+    {
+        if (!IsWaitingForNextTrial() || IsSessionComplete())
+        {
+            return;
+        }
+
+        if (agentController != null)
+        {
+            agentController.OnNextTrialClicked();
+        }
+        else
+        {
+            camilaController.OnNextTrialClicked();
+        }
+
+        if (!IsSessionComplete())
+        {
+            ShowTrailStartPrompt();
+        }
+        else
+        {
+            startPromptUntil = 0f;
+            SetPrompt(string.Empty);
+        }
+    }
+
+    void ShowTrailStartPrompt()
+    {
+        startPromptMessage = $"Trail start: {GetProgressLabel()}";
+        startPromptUntil = Time.time + StartPromptSeconds;
+        SetPrompt(startPromptMessage);
+    }
+
+    string GetProgressLabel()
+    {
+        if (agentController != null)
+        {
+            return $"{agentController.CurrentTrialNumber}/{agentController.TotalTrials}";
+        }
+
+        return AttitudeTrialSession.GetProgressLabel();
+    }
+
+    bool IsWaitingForNextTrial()
+    {
+        if (agentController != null)
+        {
+            return agentController.IsWaitingForNextTrial;
+        }
+
+        return camilaController != null && camilaController.IsWaitingForNextTrial;
+    }
+
+    bool IsSessionComplete()
+    {
+        if (agentController != null)
+        {
+            return agentController.CompletedTrialCount >= agentController.TotalTrials;
+        }
+
+        return AttitudeTrialSession.IsSessionComplete;
+    }
+
+    bool TryGetPlayer(out Transform player)
+    {
+        if (playerTransform != null)
+        {
+            player = playerTransform;
+            return true;
+        }
+
+        GameObject vrRig = GameObject.Find(VrRigName);
+        if (vrRig != null)
+        {
+            foreach (Transform child in vrRig.GetComponentsInChildren<Transform>(true))
+            {
+                if (child.name == CenterEyeName)
+                {
+                    playerTransform = child;
+                    player = playerTransform;
+                    return true;
+                }
+            }
+        }
+
+        GameObject keyboardPlayer = GameObject.Find(KeyboardPlayerName);
+        if (keyboardPlayer != null)
+        {
+            playerTransform = keyboardPlayer.transform;
+            player = playerTransform;
+            return true;
+        }
+
+        if (Camera.main != null)
+        {
+            playerTransform = Camera.main.transform;
+            player = playerTransform;
+            return true;
+        }
+
+        player = null;
+        return false;
+    }
+
+    bool IsInStartZone(Vector3 position)
+    {
+        float dx = position.x - startCenter.x;
+        float dz = position.z - startCenter.z;
+        return dx * dx + dz * dz <= StartRadius * StartRadius;
+    }
+
+    static bool IsFacingNegativeZ(Transform player)
+    {
+        Vector3 forward = player.forward;
+        forward.y = 0f;
+        if (forward.sqrMagnitude < 0.0001f)
+        {
+            return false;
+        }
+
+        return Vector3.Dot(forward.normalized, Vector3.forward) < 0f;
+    }
+
+    void SetPrompt(string message)
+    {
+        if (promptText.text == message)
+        {
+            return;
+        }
+
+        promptText.text = message;
+        promptText.enabled = !string.IsNullOrEmpty(message);
+    }
+
+    static Text MakePrompt(Transform parent)
+    {
+        GameObject go = new GameObject("Prompt");
+        go.transform.SetParent(parent, false);
+
+        Text text = go.AddComponent<Text>();
+        text.text = string.Empty;
+        text.fontSize = 40;
+        text.alignment = TextAnchor.MiddleCenter;
+        text.color = Color.white;
+        text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        text.horizontalOverflow = HorizontalWrapMode.Wrap;
+        text.verticalOverflow = VerticalWrapMode.Overflow;
+        text.enabled = false;
+
+        Outline outline = go.AddComponent<Outline>();
+        outline.effectColor = new Color(0f, 0f, 0f, 0.85f);
+        outline.effectDistance = new Vector2(2f, -2f);
+
+        RectTransform rect = go.GetComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0.1f, 0.55f);
+        rect.anchorMax = new Vector2(0.9f, 0.85f);
+        rect.offsetMin = rect.offsetMax = Vector2.zero;
+        return text;
+    }
+
+    static void MakeButton(Transform parent, string label, Vector2 pos, UnityAction onClick)
     {
         GameObject go = new GameObject(label);
         go.transform.SetParent(parent, false);

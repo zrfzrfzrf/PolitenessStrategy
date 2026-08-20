@@ -18,6 +18,9 @@ public class DataExport : MonoBehaviour
     [SerializeField] KeyCode exportKey = KeyCode.P;
     [SerializeField] string filePrefix = "Path_recording";
     [SerializeField] string exportDirectory = @"D:\KTH\SummerIntern\Dataset";
+    [SerializeField] string exportSubdirectory;
+    [SerializeField] bool writePhysiologicalCopy = true;
+    [SerializeField] string physiologicalCopySubdirectory = "ecg_merged";
 
     [Header("Session time and physiological signals")]
     [Tooltip("When enabled, Path uses the EOM Session clock configured by AutoRecorder. Disable it to keep the independent elapsed-time export.")]
@@ -34,6 +37,7 @@ public class DataExport : MonoBehaviour
     bool hasPreviousSample;
     Vector3 lastSamplePosition;
     double lastSampleElapsed;
+    float totalDistanceMeters;
     float latestEcg;
     float latestHr;
     float latestRmssd;
@@ -41,6 +45,8 @@ public class DataExport : MonoBehaviour
     bool hasHr;
     bool hasRmssd;
     public bool IsRecording => isRecording;
+    bool ShouldIncludePhysiologicalSignals =>
+        includePhysiologicalSignals || string.Equals(filePrefix, "Path_recording", StringComparison.Ordinal);
 
     public void SetTarget(Transform newTarget)
     {
@@ -116,9 +122,10 @@ public class DataExport : MonoBehaviour
     {
         isRecording = true;
         hasPreviousSample = false;
+        totalDistanceMeters = 0f;
         nextSampleTime = useSessionTime ? 0.0 : Time.timeAsDouble;
 
-        if (includePhysiologicalSignals)
+        if (ShouldIncludePhysiologicalSignals)
         {
             ResetPhysiologicalSignals();
         }
@@ -139,7 +146,7 @@ public class DataExport : MonoBehaviour
 
         string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture);
         string fileName = $"{filePrefix}_{timestamp}.csv";
-        string directory = GetExportDirectory();
+        string directory = GetExportDirectory(GetPathExportSubdirectory());
         Directory.CreateDirectory(directory);
         string path = Path.Combine(directory, fileName);
 
@@ -147,8 +154,8 @@ public class DataExport : MonoBehaviour
         var csv = new StringBuilder();
         csv.Append("sample_index,");
         csv.Append(useSessionTime ? "session_time" : "elapsed_seconds");
-        csv.Append(",local_time_iso8601,x,y,z,rotation_x,rotation_y,rotation_z,speed_mps,is_in_C,is_in_F,is_in_O");
-        if (includePhysiologicalSignals)
+        csv.Append(",local_time_iso8601,x,y,z,rotation_x,rotation_y,rotation_z,step_distance_m,total_distance_m,speed_mps,is_in_C,is_in_F,is_in_O");
+        if (ShouldIncludePhysiologicalSignals)
         {
             csv.Append(",ECG,HR,RMSSD");
         }
@@ -166,12 +173,14 @@ public class DataExport : MonoBehaviour
             csv.Append(sample.Rotation.eulerAngles.x.ToString("F3", CultureInfo.InvariantCulture)).Append(',');
             csv.Append(sample.Rotation.eulerAngles.y.ToString("F3", CultureInfo.InvariantCulture)).Append(',');
             csv.Append(sample.Rotation.eulerAngles.z.ToString("F3", CultureInfo.InvariantCulture)).Append(',');
+            csv.Append(sample.StepDistanceMeters.ToString("F4", CultureInfo.InvariantCulture)).Append(',');
+            csv.Append(sample.TotalDistanceMeters.ToString("F4", CultureInfo.InvariantCulture)).Append(',');
             csv.Append(sample.SpeedMps.ToString("F4", CultureInfo.InvariantCulture)).Append(',');
             csv.Append(sample.IsInC ? '1' : '0').Append(',');
             csv.Append(sample.IsInF ? '1' : '0').Append(',');
             csv.Append(sample.IsInO ? '1' : '0');
 
-            if (includePhysiologicalSignals)
+            if (ShouldIncludePhysiologicalSignals)
             {
                 csv.Append(',');
                 AppendSignalValue(csv, sample.HasEcg, sample.Ecg);
@@ -188,6 +197,18 @@ public class DataExport : MonoBehaviour
         string eventsPath = Path.Combine(directory, $"{filePrefix}_events_{timestamp}.csv");
         ExportZoneEventsCsv(eventsPath);
 
+        if (ShouldWritePhysiologicalCopy(directory))
+        {
+            string physiologicalDirectory = GetExportDirectory(physiologicalCopySubdirectory);
+            Directory.CreateDirectory(physiologicalDirectory);
+            string physiologicalPath = Path.Combine(physiologicalDirectory, fileName);
+            File.WriteAllText(physiologicalPath, csv.ToString(), Encoding.UTF8);
+
+            string physiologicalEventsPath =
+                Path.Combine(physiologicalDirectory, $"{filePrefix}_events_{timestamp}.csv");
+            ExportZoneEventsCsv(physiologicalEventsPath);
+        }
+
         if (ClearPreviousRecordWhenExport)
         {
             samples.Clear();
@@ -202,13 +223,19 @@ public class DataExport : MonoBehaviour
     {
         var csv = new StringBuilder();
         csv.Append(useSessionTime ? "session_time" : "elapsed_seconds");
-        csv.AppendLine(",local_time_iso8601,zone,event_type");
+        csv.AppendLine(",local_time_iso8601,x,y,z,zone,event_type");
 
         for (int i = 0; i < zoneEvents.Count; i++)
         {
             ZoneEvent zoneEvent = zoneEvents[i];
             csv.Append(zoneEvent.ElapsedSeconds.ToString("F3", CultureInfo.InvariantCulture)).Append(',');
             csv.Append(zoneEvent.LocalTimeIso8601).Append(',');
+            AppendEventPositionValue(csv, zoneEvent.HasPosition, zoneEvent.Position.x);
+            csv.Append(',');
+            AppendEventPositionValue(csv, zoneEvent.HasPosition, zoneEvent.Position.y);
+            csv.Append(',');
+            AppendEventPositionValue(csv, zoneEvent.HasPosition, zoneEvent.Position.z);
+            csv.Append(',');
             csv.Append(zoneEvent.Zone).Append(',');
             csv.Append(zoneEvent.EventType);
             csv.AppendLine();
@@ -218,15 +245,62 @@ public class DataExport : MonoBehaviour
         Debug.Log($"DataExport exported {zoneEvents.Count} zone events to: {path}");
     }
 
-    string GetExportDirectory()
+    string GetExportDirectory(string subdirectory = null)
     {
 #if UNITY_ANDROID && !UNITY_EDITOR
-        return Application.persistentDataPath;
+        string rootDirectory = Application.persistentDataPath;
 #else
-        return string.IsNullOrWhiteSpace(exportDirectory)
+        string rootDirectory = string.IsNullOrWhiteSpace(exportDirectory)
             ? Application.persistentDataPath
             : exportDirectory;
 #endif
+
+        return string.IsNullOrWhiteSpace(subdirectory)
+            ? rootDirectory
+            : Path.Combine(rootDirectory, subdirectory);
+    }
+
+    string GetPathExportSubdirectory()
+    {
+        if (!string.IsNullOrWhiteSpace(exportSubdirectory))
+        {
+            return exportSubdirectory;
+        }
+
+        return filePrefix.IndexOf("test", StringComparison.OrdinalIgnoreCase) >= 0
+            || filePrefix.IndexOf("keyboard", StringComparison.OrdinalIgnoreCase) >= 0
+                ? "keyboard_path"
+                : "vr_path";
+    }
+
+    bool ShouldWritePhysiologicalCopy(string mainDirectory)
+    {
+        if (!writePhysiologicalCopy || !ShouldIncludePhysiologicalSignals
+            || !HasAnyPhysiologicalValue()
+            || string.IsNullOrWhiteSpace(physiologicalCopySubdirectory))
+        {
+            return false;
+        }
+
+        string physiologicalDirectory = GetExportDirectory(physiologicalCopySubdirectory);
+        return !string.Equals(
+            Path.GetFullPath(mainDirectory),
+            Path.GetFullPath(physiologicalDirectory),
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+    bool HasAnyPhysiologicalValue()
+    {
+        for (int i = 0; i < samples.Count; i++)
+        {
+            PathSample sample = samples[i];
+            if (sample.HasEcg || sample.HasHr || sample.HasRmssd)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     void OnApplicationPause(bool pauseStatus)
@@ -266,24 +340,29 @@ public class DataExport : MonoBehaviour
         {
             zoneEvent.ElapsedSeconds = (float)ExciteOMeterManager.GetTimestampDouble();
         }
+        else if (!useSessionTime)
+        {
+            zoneEvent.ElapsedSeconds = (float)GetRecordingElapsedSeconds();
+        }
+
+        if (target != null)
+        {
+            zoneEvent.Position = target.position;
+            zoneEvent.HasPosition = true;
+        }
 
         zoneEvents.Add(zoneEvent);
     }
 
     void HandlePhysiologicalData(DataType type, float timestamp, float value)
     {
-        if (!includePhysiologicalSignals || !isRecording)
+        if (!ShouldIncludePhysiologicalSignals || !isRecording || !ExciteOMeterManager.currentlyRecordingSession)
         {
             return;
         }
 
         if (useSessionTime)
         {
-            if (!ExciteOMeterManager.currentlyRecordingSession)
-            {
-                return;
-            }
-
             switch (type)
             {
                 case DataType.RawECG:
@@ -319,14 +398,18 @@ public class DataExport : MonoBehaviour
 
     void HandleLoggingStateChanged(bool isLogging)
     {
-        if (!isLogging || !useSessionTime || !includePhysiologicalSignals)
+        if (!isLogging || !ShouldIncludePhysiologicalSignals)
         {
             return;
         }
 
         // Values received while AutoRecorder was waiting only prove that the
         // streams are ready. A new Path recording must not reuse those values.
-        nextSampleTime = 0.0;
+        if (useSessionTime)
+        {
+            nextSampleTime = 0.0;
+        }
+
         hasPreviousSample = false;
         ResetPhysiologicalSignals();
     }
@@ -346,24 +429,35 @@ public class DataExport : MonoBehaviour
         }
     }
 
+    static void AppendEventPositionValue(StringBuilder csv, bool hasValue, float value)
+    {
+        if (hasValue)
+        {
+            csv.Append(value.ToString("F4", CultureInfo.InvariantCulture));
+        }
+    }
+
     void RecordSample(double elapsed)
     {
-        if (useSessionTime && includePhysiologicalSignals)
+        if (useSessionTime && ShouldIncludePhysiologicalSignals)
         {
             AdvancePhysiologicalSignals(elapsed);
         }
 
         Vector3 position = target.position;
+        float stepDistanceMeters = 0f;
         float speedMps = 0f;
 
         if (hasPreviousSample)
         {
             Vector3 delta = position - lastSamplePosition;
             delta.y = 0f;
+            stepDistanceMeters = delta.magnitude;
+            totalDistanceMeters += stepDistanceMeters;
             double deltaTime = elapsed - lastSampleElapsed;
             if (deltaTime > 0f)
             {
-                speedMps = (float)(delta.magnitude / deltaTime);
+                speedMps = (float)(stepDistanceMeters / deltaTime);
             }
         }
 
@@ -373,6 +467,8 @@ public class DataExport : MonoBehaviour
             LocalTimeIso8601 = DateTime.Now.ToString("O", CultureInfo.InvariantCulture),
             Position = position,
             Rotation = target.rotation,
+            StepDistanceMeters = stepDistanceMeters,
+            TotalDistanceMeters = totalDistanceMeters,
             SpeedMps = speedMps,
             IsInC = ZoneEventBus.InC,
             IsInF = ZoneEventBus.InF,
@@ -396,6 +492,8 @@ public class DataExport : MonoBehaviour
         public string LocalTimeIso8601;
         public Vector3 Position;
         public Quaternion Rotation;
+        public float StepDistanceMeters;
+        public float TotalDistanceMeters;
         public float SpeedMps;
         public bool IsInC;
         public bool IsInF;

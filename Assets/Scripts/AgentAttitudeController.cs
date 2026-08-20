@@ -63,6 +63,7 @@ public class AgentAttitudeController : MonoBehaviour
     public Phase CurrentPhase => currentPhase;
     public bool IsTerminal => isTerminal;
     public bool IsPlayerInC => isPlayerInC;
+    public bool IsWaitingForNextTrial => waitingForNextTrial;
     public int TotalTrials => GetTrialCount();
     public int CompletedTrialCount => Mathf.Min(currentTrialIndex, TotalTrials);
     public int CurrentTrialNumber => isTerminal && currentTrialIndex >= TotalTrials
