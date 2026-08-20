@@ -49,8 +49,8 @@ public class TrialFlowUI : MonoBehaviour
 
         promptText = MakePrompt(canvasObject.transform);
 
-        MakeButton(canvasObject.transform, "next_trail", new Vector2(-200f, 30f), OnNextTrailForced);
-        MakeButton(canvasObject.transform, "restart", new Vector2(200f, 30f), OnRestartClicked);
+        MakeButton(canvasObject.transform, "Next_trail", new Vector2(-200f, 30f), OnNextTrailForced);
+        MakeButton(canvasObject.transform, "Start/Restart", new Vector2(200f, 30f), OnRestartClicked);
     }
 
     void Start()
@@ -143,12 +143,12 @@ public class TrialFlowUI : MonoBehaviour
             return;
         }
 
-        StartNextTrail();
+        Invoke(nameof(StartNextTrail), 1.5f);
     }
 
     void OnNextTrailForced()
     {
-        StartNextTrail();
+        Invoke(nameof(StartNextTrail), 1.5f);
     }
 
     void StartNextTrail()
