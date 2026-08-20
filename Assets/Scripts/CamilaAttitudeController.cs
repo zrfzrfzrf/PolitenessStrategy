@@ -80,6 +80,31 @@ public class CamilaAttitudeController : MonoBehaviour
         BeginCurrentTrial();
     }
 
+    public void ForceNextTrial()
+    {
+        CancelStayAtCTimer();
+
+        if (!waitingForNextTrial && !AttitudeTrialSession.IsSessionComplete)
+        {
+            isTrialCompleting = true;
+            AttitudeTrialSession.CompleteCurrentTrial();
+            Debug.Log(
+                $"Trial force-skipped. Finished {AttitudeTrialSession.CompletedTrialCount}/{AttitudeTrialSession.TotalTrials}.");
+        }
+
+        waitingForNextTrial = false;
+
+        if (AttitudeTrialSession.IsSessionComplete)
+        {
+            isTerminal = true;
+            currentPhase = Phase.Praise;
+            Debug.Log("All 9 attitude trials are complete.");
+            return;
+        }
+
+        BeginCurrentTrial();
+    }
+
     public void OnRestartClicked()
     {
         CancelStayAtCTimer();

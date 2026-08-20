@@ -233,7 +233,32 @@ public class TrialFlowUI : MonoBehaviour
 
     void OnNextTrailForced()
     {
-        Invoke(nameof(StartNextTrail), 1.5f);
+        isStarted = true;
+        CancelInvoke(nameof(StartNextTrail));
+
+        if (IsSessionComplete())
+        {
+            return;
+        }
+
+        if (agentController != null)
+        {
+            agentController.ForceNextTrial();
+        }
+        else
+        {
+            camilaController.ForceNextTrial();
+        }
+
+        if (!IsSessionComplete())
+        {
+            ShowTrailStartPrompt();
+        }
+        else
+        {
+            startPromptUntil = 0f;
+            SetPrompt(string.Empty);
+        }
     }
 
     void StartNextTrail()

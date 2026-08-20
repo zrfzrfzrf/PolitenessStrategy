@@ -105,6 +105,30 @@ public class AgentAttitudeController : MonoBehaviour
         BeginCurrentTrial();
     }
 
+    public void ForceNextTrial()
+    {
+        CancelStayAtCTimer();
+
+        if (!waitingForNextTrial && !IsSessionComplete())
+        {
+            isTrialCompleting = true;
+            currentTrialIndex++;
+            Debug.Log($"Trial force-skipped. Finished {CompletedTrialCount}/{TotalTrials}.");
+        }
+
+        waitingForNextTrial = false;
+
+        if (IsSessionComplete())
+        {
+            isTerminal = true;
+            currentPhase = Phase.Praise;
+            Debug.Log($"All {TotalTrials} attitude trials are complete.");
+            return;
+        }
+
+        BeginCurrentTrial();
+    }
+
     public void OnRestartClicked()
     {
         CancelStayAtCTimer();
