@@ -107,6 +107,7 @@ public class CamilaAttitudeController : MonoBehaviour
 
     public void OnRestartClicked()
     {
+        Debug.Log($"[AudioDebug] CamilaAttitudeController.OnRestartClicked on '{name}' activeInHierarchy={gameObject.activeInHierarchy} time={Time.time:F3} frame={Time.frameCount}");
         CancelStayAtCTimer();
         AttitudeTrialSession.ResetSession();
         waitingForNextTrial = false;
@@ -276,11 +277,13 @@ public class CamilaAttitudeController : MonoBehaviour
     {
         if (!enableResponses)
         {
+            Debug.Log($"[AudioDebug] Camila PlayResponse skipped because responses are disabled on '{name}'.");
             return;
         }
 
         if (currentPhase != Phase.Invitation && currentPhase != Phase.RequestToMove)
         {
+            Debug.Log($"[AudioDebug] Camila PlayResponse skipped for phase {currentPhase} on '{name}'.");
             return;
         }
 
@@ -293,9 +296,20 @@ public class CamilaAttitudeController : MonoBehaviour
         string stateName = GetAnimationStateName(currentAttitude);
         int stateHash = Animator.StringToHash(stateName);
 
+        Debug.Log(
+            $"[AudioDebug] Camila PlayResponse request controller='{name}' activeInHierarchy={gameObject.activeInHierarchy} " +
+            $"animator='{GetHierarchyPath(animator.transform)}' state='{stateName}' " +
+            $"phase={currentPhase} attitude={currentAttitude} " +
+            $"currentShortHash={animator.GetCurrentAnimatorStateInfo(0).shortNameHash} targetHash={stateHash} " +
+            $"time={Time.time:F3} frame={Time.frameCount}");
+
         // Replay the same clip when Invitation and EnterC share an attitude.
         if (animator.GetCurrentAnimatorStateInfo(0).shortNameHash == stateHash)
         {
+            Debug.Log(
+                $"[AudioDebug] Camila target is already current state. " +
+                $"Fading to idle first: idle='{IdleAnimationState}' target='{stateName}' " +
+                $"time={Time.time:F3} frame={Time.frameCount}");
             animator.CrossFade(IdleAnimationState, AnimationCrossFadeSeconds, 0, 0f);
             animator.Update(0f);
         }
@@ -310,6 +324,11 @@ public class CamilaAttitudeController : MonoBehaviour
         {
             return;
         }
+
+        Debug.Log(
+            $"[AudioDebug] Camila ResetAnimatorForNewTrial controller='{name}' activeInHierarchy={gameObject.activeInHierarchy} " +
+            $"animator='{GetHierarchyPath(animator.transform)}' idle='{IdleAnimationState}' " +
+            $"time={Time.time:F3} frame={Time.frameCount}");
 
         animator.Rebind();
         animator.Update(0f);
@@ -330,5 +349,23 @@ public class CamilaAttitudeController : MonoBehaviour
             default:
                 return PoliteAnimationState;
         }
+    }
+
+    static string GetHierarchyPath(Transform transform)
+    {
+        if (transform == null)
+        {
+            return "<null>";
+        }
+
+        string path = transform.name;
+        Transform current = transform.parent;
+        while (current != null)
+        {
+            path = current.name + "/" + path;
+            current = current.parent;
+        }
+
+        return path;
     }
 }

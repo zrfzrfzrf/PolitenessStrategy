@@ -19,4 +19,6 @@ MonoBehaviour:
   hostileState: Come_here
   praiseState: Welcome_back
   ignoreState: 
-  crossFadeSeconds: 0.05
+  directFState: Welcome_back
+  indirectFState: This_Place_Is_Waiting_For_You
+  crossFadeSeconds: 0.1

@@ -7,10 +7,13 @@ public class TrialFlowUI : MonoBehaviour
 {
     const string ReturnPrompt = "This trail is over. Please return to the starting point.";
     const string RotatePrompt = "Please rotate and face forward.";
+    const string ReadyPrompt = "Correct position. Next trial will start soon.";
     const string KeyboardPlayerName = "player_for_keyboard_test";
     const string VrRigName = "OVRCameraRigInteraction";
     const string CenterEyeName = "CenterEyeAnchor";
     const float StartPromptSeconds = 3f;
+    const float RequiredStartYawDegrees = -45f;
+    const float FacingToleranceDegrees = 45f;
 
     Vector3 startCenter = Vector3.zero;
     const float StartRadius = 1f;
@@ -21,14 +24,17 @@ public class TrialFlowUI : MonoBehaviour
     static readonly Color ZoneOffColor = new Color(0.18f, 0.18f, 0.18f, 0.7f);
 
     Text promptText;
+    Text vrPromptText;
     Image zoneCLight;
     Image zoneOLight;
     Image zoneFLight;
     AgentAttitudeController agentController;
     CamilaAttitudeController camilaController;
     Transform playerTransform;
+    Transform vrPromptParent;
     float startPromptUntil;
     string startPromptMessage = string.Empty;
+    bool nextTrialScheduled = false;
 
     bool isStarted = false;
 
@@ -70,31 +76,43 @@ public class TrialFlowUI : MonoBehaviour
             startCenter = new Vector3(vrRig.transform.position.x, 0f, vrRig.transform.position.z);
         }
 
-        DrawStartZoneCircle();
+        DrawStartZoneMarker();
     }
 
-    void DrawStartZoneCircle()
+    void DrawStartZoneMarker()
     {
         LineRenderer lr = gameObject.AddComponent<LineRenderer>();
         lr.useWorldSpace = true;
         lr.loop = true;
-        lr.startWidth = lr.endWidth = 0.04f;
+        lr.startWidth = lr.endWidth = 0.05f;
         lr.material = new Material(Shader.Find("Sprites/Default"));
-        lr.startColor = lr.endColor = new Color(0f, 0.8f, 1f, 0.8f);
+        lr.startColor = lr.endColor = new Color(0f, 0.8f, 1f, 0.9f);
 
-        lr.positionCount = 64;
-        for (int i = 0; i < 64; i++)
-        {
-            float angle = i * 2f * Mathf.PI / 64;
-            float x = startCenter.x + Mathf.Cos(angle) * StartRadius;
-            float z = startCenter.z + Mathf.Sin(angle) * StartRadius;
-            lr.SetPosition(i, new Vector3(x, 0.02f, z));
-        }
+        const float markerHeight = -0.6f;
+        const float markerSideLength = 1.2f;
+        const float triangleHeight = markerSideLength * 0.8660254f;
+        const float markerHalfWidth = markerSideLength * 0.5f;
+        Quaternion rotation = Quaternion.Euler(0f, RequiredStartYawDegrees, 0f);
+
+        Vector3 tip = startCenter + rotation * new Vector3(0f, markerHeight, triangleHeight * 2f / 3f);
+        Vector3 rightBack = startCenter + rotation * new Vector3(markerHalfWidth, markerHeight, -triangleHeight / 3f);
+        Vector3 leftBack = startCenter + rotation * new Vector3(-markerHalfWidth, markerHeight, -triangleHeight / 3f);
+
+        lr.positionCount = 3;
+        lr.SetPosition(0, tip);
+        lr.SetPosition(1, rightBack);
+        lr.SetPosition(2, leftBack);
     }
 
     void OnRestartClicked()
     {
         isStarted = true;
+        Debug.Log(
+            $"[AudioDebug] Restart clicked. " +
+            $"agentController={(agentController != null ? agentController.name : "<null>")} " +
+            $"camilaController={(camilaController != null ? camilaController.name : "<null>")} " +
+            $"time={Time.time:F3} frame={Time.frameCount}");
+
         if (agentController != null)
         {
             agentController.OnRestartClicked();
@@ -212,29 +230,38 @@ public class TrialFlowUI : MonoBehaviour
     {
         if (!TryGetPlayer(out Transform player))
         {
+            CancelPendingNextTrial();
             SetPrompt(ReturnPrompt);
             return;
         }
 
         if (!IsInStartZone(player.position))
         {
+            CancelPendingNextTrial();
             SetPrompt(ReturnPrompt);
             return;
         }
 
-        if (IsFacingNegativeZ(player))
+        if (IsFacingWrongDirection(player))
         {
+            CancelPendingNextTrial();
             SetPrompt(RotatePrompt);
             return;
         }
 
-        Invoke(nameof(StartNextTrail), 1.5f);
+        SetPrompt(ReadyPrompt);
+
+        if (!nextTrialScheduled)
+        {
+            nextTrialScheduled = true;
+            Invoke(nameof(StartNextTrail), 1.5f);
+        }
     }
 
     void OnNextTrailForced()
     {
         isStarted = true;
-        CancelInvoke(nameof(StartNextTrail));
+        CancelPendingNextTrial();
 
         if (IsSessionComplete())
         {
@@ -263,6 +290,8 @@ public class TrialFlowUI : MonoBehaviour
 
     void StartNextTrail()
     {
+        nextTrialScheduled = false;
+
         if (!IsWaitingForNextTrial() || IsSessionComplete())
         {
             return;
@@ -373,7 +402,7 @@ public class TrialFlowUI : MonoBehaviour
         return dx * dx + dz * dz <= StartRadius * StartRadius;
     }
 
-    static bool IsFacingNegativeZ(Transform player)
+    static bool IsFacingWrongDirection(Transform player)
     {
         Vector3 forward = player.forward;
         forward.y = 0f;
@@ -382,18 +411,112 @@ public class TrialFlowUI : MonoBehaviour
             return false;
         }
 
-        return Vector3.Dot(forward.normalized, Vector3.forward) < 0f;
+        Vector3 requiredForward = Quaternion.Euler(0f, RequiredStartYawDegrees, 0f) * Vector3.forward;
+        return Vector3.Angle(forward.normalized, requiredForward) > FacingToleranceDegrees;
     }
 
     void SetPrompt(string message)
     {
-        if (promptText.text == message)
+        bool hasMessage = !string.IsNullOrEmpty(message);
+
+        if (promptText != null && promptText.text != message)
+        {
+            promptText.text = message;
+        }
+
+        if (promptText != null)
+        {
+            promptText.enabled = hasMessage;
+        }
+
+        UpdateVrPrompt(message, hasMessage);
+    }
+
+    void UpdateVrPrompt(string message, bool hasMessage)
+    {
+        if (!hasMessage)
+        {
+            if (vrPromptText != null)
+            {
+                vrPromptText.enabled = false;
+            }
+            return;
+        }
+
+        if (!TryGetPlayer(out Transform player))
         {
             return;
         }
 
-        promptText.text = message;
-        promptText.enabled = !string.IsNullOrEmpty(message);
+        EnsureVrPrompt(player);
+        vrPromptText.text = message;
+        vrPromptText.enabled = true;
+    }
+
+    void EnsureVrPrompt(Transform player)
+    {
+        if (vrPromptText != null && vrPromptParent == player)
+        {
+            return;
+        }
+
+        if (vrPromptText != null)
+        {
+            vrPromptText.transform.parent.SetParent(player, false);
+            vrPromptText.transform.parent.localPosition = new Vector3(0f, 0f, 1.8f);
+            vrPromptText.transform.parent.localRotation = Quaternion.identity;
+            vrPromptText.transform.parent.localScale = Vector3.one * 0.002f;
+            vrPromptParent = player;
+            return;
+        }
+
+        GameObject canvasObject = new GameObject("VRPromptCanvas");
+        canvasObject.transform.SetParent(player, false);
+        canvasObject.transform.localPosition = new Vector3(0f, 0f, 1.8f);
+        canvasObject.transform.localRotation = Quaternion.identity;
+        canvasObject.transform.localScale = Vector3.one * 0.002f;
+
+        Canvas canvas = canvasObject.AddComponent<Canvas>();
+        canvas.renderMode = RenderMode.WorldSpace;
+
+        RectTransform canvasRect = canvasObject.GetComponent<RectTransform>();
+        canvasRect.sizeDelta = new Vector2(900f, 240f);
+
+        GameObject textObject = new GameObject("VRPromptText");
+        textObject.transform.SetParent(canvasObject.transform, false);
+
+        vrPromptText = textObject.AddComponent<Text>();
+        vrPromptText.text = string.Empty;
+        vrPromptText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        vrPromptText.fontSize = 54;
+        vrPromptText.alignment = TextAnchor.MiddleCenter;
+        vrPromptText.color = Color.white;
+        vrPromptText.horizontalOverflow = HorizontalWrapMode.Wrap;
+        vrPromptText.verticalOverflow = VerticalWrapMode.Overflow;
+        vrPromptText.enabled = false;
+
+        Outline outline = textObject.AddComponent<Outline>();
+        outline.effectColor = new Color(0f, 0f, 0f, 0.85f);
+        outline.effectDistance = new Vector2(2f, -2f);
+
+        RectTransform textRect = textObject.GetComponent<RectTransform>();
+        textRect.anchorMin = Vector2.zero;
+        textRect.anchorMax = Vector2.one;
+        textRect.offsetMin = Vector2.zero;
+        textRect.offsetMax = Vector2.zero;
+
+        vrPromptParent = player;
+    }
+
+    void CancelPendingNextTrial()
+    {
+        if (!nextTrialScheduled)
+        {
+            return;
+        }
+
+        nextTrialScheduled = false;
+        CancelInvoke(nameof(StartNextTrail));
     }
 
     static Text MakePrompt(Transform parent)

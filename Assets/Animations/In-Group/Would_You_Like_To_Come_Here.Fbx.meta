@@ -50,7 +50,7 @@ ModelImporter:
       : position error = 3.217036 mm\n\t'CC_Base_R_Pinky2' : position error = 1.309744
       mm\nCopied Avatar Rig Configuration mis-match. Inbetween bone rotation in copied
       configuration does not match rotation in animation file:\n\t'CC_Base_NeckTwist02'
-      : rotation error = 4.351685 deg\n"
+      : rotation error = 4.351684 deg\n"
     animationImportErrors: 
     animationImportWarnings: "\nClip 'Would_You_Like_To_Come_Here' has import animation
       warnings that might lower retargeting quality:\n\t'CC_Base_NeckTwist02' is
@@ -81,9 +81,9 @@ ModelImporter:
       hasAdditiveReferencePose: 0
       loopTime: 0
       loopBlend: 0
-      loopBlendOrientation: 0
-      loopBlendPositionY: 0
-      loopBlendPositionXZ: 0
+      loopBlendOrientation: 1
+      loopBlendPositionY: 1
+      loopBlendPositionXZ: 1
       keepOriginalOrientation: 0
       keepOriginalPositionY: 1
       keepOriginalPositionXZ: 0

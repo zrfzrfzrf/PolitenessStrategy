@@ -29,6 +29,7 @@ public static class MetaQuestRouteBootstrap
         {
             ConfigureVrRig(vrRig);
             SuppressBrokenActiveStateSelectors(vrRig);
+            DisableNonVrCameras(vrRig);
         }
 
         if (keyboardPlayer != null)
@@ -98,6 +99,22 @@ public static class MetaQuestRouteBootstrap
         }
 
         Debug.Log($"Meta Quest route tracking configured on {VrRigName}; target is {CenterEyeName}.");
+    }
+
+    static void DisableNonVrCameras(GameObject vrRig)
+    {
+        Camera[] cameras = Object.FindObjectsOfType<Camera>(true);
+        for (int i = 0; i < cameras.Length; i++)
+        {
+            Camera camera = cameras[i];
+            if (camera == null || camera.transform.IsChildOf(vrRig.transform))
+            {
+                continue;
+            }
+
+            camera.enabled = false;
+            Debug.Log($"Disabled non-VR camera for Meta Quest route: {camera.name}.");
+        }
     }
 
     static void ConfigureKeyboardTestPlayer(GameObject keyboardPlayer)
