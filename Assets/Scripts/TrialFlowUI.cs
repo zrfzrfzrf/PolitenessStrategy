@@ -35,6 +35,7 @@ public class TrialFlowUI : MonoBehaviour
     float startPromptUntil;
     string startPromptMessage = string.Empty;
     bool nextTrialScheduled = false;
+    bool useVrPrompt = false;
 
     bool isStarted = false;
 
@@ -70,9 +71,11 @@ public class TrialFlowUI : MonoBehaviour
 
     void Start()
     {
-        GameObject vrRig = GameObject.Find("OVRCameraRigInteraction");
+        GameObject vrRig = GameObject.Find(VrRigName);
+        useVrPrompt = vrRig != null;
         if (vrRig != null)
         {
+            Debug.Log($"Using VR prompt for {VrRigName}");
             startCenter = new Vector3(vrRig.transform.position.x, 0f, vrRig.transform.position.z);
         }
 
@@ -419,6 +422,22 @@ public class TrialFlowUI : MonoBehaviour
     {
         bool hasMessage = !string.IsNullOrEmpty(message);
 
+        if (useVrPrompt)
+        {
+            if (promptText != null)
+            {
+                promptText.enabled = false;
+            }
+
+            UpdateVrPrompt(message, hasMessage);
+            return;
+        }
+
+        if (vrPromptText != null)
+        {
+            vrPromptText.enabled = false;
+        }
+
         if (promptText != null && promptText.text != message)
         {
             promptText.text = message;
@@ -428,8 +447,6 @@ public class TrialFlowUI : MonoBehaviour
         {
             promptText.enabled = hasMessage;
         }
-
-        UpdateVrPrompt(message, hasMessage);
     }
 
     void UpdateVrPrompt(string message, bool hasMessage)
