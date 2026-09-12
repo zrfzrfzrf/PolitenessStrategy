@@ -29,6 +29,7 @@ public class DataExport : MonoBehaviour
 
     readonly List<PathSample> samples = new List<PathSample>();
     readonly List<ZoneEvent> zoneEvents = new List<ZoneEvent>();
+    readonly Queue<string> pendingPathEvents = new Queue<string>();
     readonly Queue<TimedSignalValue> ecgQueue = new Queue<TimedSignalValue>();
     readonly Queue<TimedSignalValue> hrQueue = new Queue<TimedSignalValue>();
     readonly Queue<TimedSignalValue> rmssdQueue = new Queue<TimedSignalValue>();
@@ -56,6 +57,7 @@ public class DataExport : MonoBehaviour
     void OnEnable()
     {
         ZoneEventBus.OnZoneEvent += HandleZoneEvent;
+        TrialEventBus.OnTrialEvent += HandleTrialEvent;
         EoM_Events.OnDataReceived += HandlePhysiologicalData;
         EoM_Events.OnLoggingStateChanged += HandleLoggingStateChanged;
     }
@@ -63,6 +65,7 @@ public class DataExport : MonoBehaviour
     void OnDisable()
     {
         ZoneEventBus.OnZoneEvent -= HandleZoneEvent;
+        TrialEventBus.OnTrialEvent -= HandleTrialEvent;
         EoM_Events.OnDataReceived -= HandlePhysiologicalData;
         EoM_Events.OnLoggingStateChanged -= HandleLoggingStateChanged;
     }
@@ -159,6 +162,7 @@ public class DataExport : MonoBehaviour
         {
             csv.Append(",ECG,HR,RMSSD");
         }
+        csv.Append(",event");
         csv.AppendLine();
 
         for (int i = 0; i < samples.Count; i++)
@@ -189,6 +193,12 @@ public class DataExport : MonoBehaviour
                 csv.Append(',');
                 AppendSignalValue(csv, sample.HasRmssd, sample.Rmssd);
             }
+
+            csv.Append(',');
+            if (!string.IsNullOrEmpty(sample.Event))
+            {
+                csv.Append(sample.Event);
+            }
             csv.AppendLine();
         }
 
@@ -213,6 +223,7 @@ public class DataExport : MonoBehaviour
         {
             samples.Clear();
             zoneEvents.Clear();
+            pendingPathEvents.Clear();
         }
 
         Debug.Log($"DataExport exported {sampleCount} samples to: {path}");
@@ -354,6 +365,28 @@ public class DataExport : MonoBehaviour
         zoneEvents.Add(zoneEvent);
     }
 
+    void HandleTrialEvent(string eventLabel)
+    {
+        if (string.IsNullOrEmpty(eventLabel))
+        {
+            return;
+        }
+
+        // Prefer stamping the latest recorded frame so markers align with path samples.
+        // If recording has not produced a sample yet, keep the label for the next sample.
+        if (isRecording && samples.Count > 0)
+        {
+            PathSample sample = samples[samples.Count - 1];
+            sample.Event = string.IsNullOrEmpty(sample.Event)
+                ? eventLabel
+                : sample.Event + ";" + eventLabel;
+            samples[samples.Count - 1] = sample;
+            return;
+        }
+
+        pendingPathEvents.Enqueue(eventLabel);
+    }
+
     void HandlePhysiologicalData(DataType type, float timestamp, float value)
     {
         if (!ShouldIncludePhysiologicalSignals || !isRecording || !ExciteOMeterManager.currentlyRecordingSession)
@@ -461,6 +494,13 @@ public class DataExport : MonoBehaviour
             }
         }
 
+        string pathEvent = string.Empty;
+        if (pendingPathEvents.Count > 0)
+        {
+            pathEvent = string.Join(";", pendingPathEvents);
+            pendingPathEvents.Clear();
+        }
+
         samples.Add(new PathSample
         {
             ElapsedSeconds = elapsed,
@@ -478,7 +518,8 @@ public class DataExport : MonoBehaviour
             Rmssd = latestRmssd,
             HasEcg = hasEcg,
             HasHr = hasHr,
-            HasRmssd = hasRmssd
+            HasRmssd = hasRmssd,
+            Event = pathEvent
         });
 
         lastSamplePosition = position;
@@ -504,6 +545,7 @@ public class DataExport : MonoBehaviour
         public bool HasEcg;
         public bool HasHr;
         public bool HasRmssd;
+        public string Event;
     }
 
     readonly struct TimedSignalValue

@@ -49,6 +49,7 @@ public class CamilaAttitudeController : MonoBehaviour
     bool isTerminal;
     bool isTrialCompleting;
     bool waitingForNextTrial;
+    bool recordTrialEvents;
     Coroutine stayAtCCoroutine;
     AttitudeTrialSession.TrialDefinition currentTrial;
 
@@ -99,6 +100,10 @@ public class CamilaAttitudeController : MonoBehaviour
             isTerminal = true;
             currentPhase = Phase.Praise;
             Debug.Log("All 9 attitude trials are complete.");
+            if (recordTrialEvents)
+            {
+                TrialEventBus.ReportSessionEnd();
+            }
             return;
         }
 
@@ -111,6 +116,7 @@ public class CamilaAttitudeController : MonoBehaviour
         CancelStayAtCTimer();
         AttitudeTrialSession.ResetSession();
         waitingForNextTrial = false;
+        recordTrialEvents = true;
         BeginCurrentTrial();
     }
 
@@ -123,6 +129,10 @@ public class CamilaAttitudeController : MonoBehaviour
             isTerminal = true;
             currentPhase = Phase.Praise;
             Debug.Log("All 9 attitude trials are complete.");
+            if (recordTrialEvents)
+            {
+                TrialEventBus.ReportSessionEnd();
+            }
             return;
         }
 
@@ -138,6 +148,10 @@ public class CamilaAttitudeController : MonoBehaviour
             $"Starting trial {AttitudeTrialSession.GetProgressLabel()}: " +
             $"Invitation={currentTrial.InitialAttitude}, EnterC={currentTrial.EnterCAttitude}");
 
+        if (recordTrialEvents)
+        {
+            TrialEventBus.ReportTrialStart(AttitudeTrialSession.CurrentTrialNumber);
+        }
         ResetAnimatorForNewTrial();
         NotifyStateChanged("Trial started");
         PlayResponse();
@@ -236,6 +250,10 @@ public class CamilaAttitudeController : MonoBehaviour
         if (AttitudeTrialSession.IsSessionComplete)
         {
             Debug.Log("All 9 attitude trials are complete.");
+            if (recordTrialEvents)
+            {
+                TrialEventBus.ReportSessionEnd();
+            }
             return;
         }
 

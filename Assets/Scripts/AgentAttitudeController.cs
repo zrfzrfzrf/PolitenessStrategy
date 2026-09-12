@@ -56,6 +56,7 @@ public class AgentAttitudeController : MonoBehaviour
     bool isTrialCompleting;
     bool waitingForNextTrial;
     bool sessionStarted;
+    bool recordTrialEvents;
     int currentTrialIndex;
     Coroutine stayAtCCoroutine;
 
@@ -123,6 +124,10 @@ public class AgentAttitudeController : MonoBehaviour
             isTerminal = true;
             currentPhase = Phase.Praise;
             Debug.Log($"All {TotalTrials} attitude trials are complete.");
+            if (recordTrialEvents)
+            {
+                TrialEventBus.ReportSessionEnd();
+            }
             return;
         }
 
@@ -135,6 +140,7 @@ public class AgentAttitudeController : MonoBehaviour
         CancelStayAtCTimer();
         StartNewSession();
         waitingForNextTrial = false;
+        recordTrialEvents = true;
         BeginCurrentTrial();
     }
 
@@ -148,6 +154,10 @@ public class AgentAttitudeController : MonoBehaviour
             isTerminal = true;
             currentPhase = Phase.Praise;
             Debug.Log($"All {TotalTrials} attitude trials are complete.");
+            if (recordTrialEvents)
+            {
+                TrialEventBus.ReportSessionEnd();
+            }
             return;
         }
 
@@ -167,6 +177,10 @@ public class AgentAttitudeController : MonoBehaviour
             $"Invitation={currentAttitude}, EnterC={currentTrialEnterCAttitude}, " +
             $"DirectF={currentDirectFStrategy}, IndirectF={currentIndirectFStrategy}");
 
+        if (recordTrialEvents)
+        {
+            TrialEventBus.ReportTrialStart(CurrentTrialNumber);
+        }
         ResetAnimatorForNewTrial();
         NotifyStateChanged("Trial started");
         PlayResponse();
@@ -367,6 +381,10 @@ public class AgentAttitudeController : MonoBehaviour
         if (IsSessionComplete())
         {
             Debug.Log($"All {TotalTrials} attitude trials are complete.");
+            if (recordTrialEvents)
+            {
+                TrialEventBus.ReportSessionEnd();
+            }
             return;
         }
 
