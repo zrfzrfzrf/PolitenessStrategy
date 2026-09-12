@@ -30,7 +30,7 @@ public class CamilaAttitudeController : MonoBehaviour
     [Serializable]
     public class AttitudeStateEvent : UnityEvent<AttitudeState> { }
 
-    [SerializeField, Min(0.1f)] float stayAtCTimeoutSeconds = 8f;
+    [SerializeField, Min(0.1f)] float stayAtCTimeoutSeconds = 7f;
     [SerializeField] Animator animator;
     [SerializeField] bool enableResponses = true;
 
@@ -46,6 +46,8 @@ public class CamilaAttitudeController : MonoBehaviour
     Attitude currentTrialEnterCAttitude;
     Phase currentPhase;
     bool isPlayerInC;
+    bool hasEnteredCThisTrial;
+    bool hasLeftCAfterEnter;
     bool isTerminal;
     bool isTrialCompleting;
     bool waitingForNextTrial;
@@ -141,6 +143,8 @@ public class CamilaAttitudeController : MonoBehaviour
         currentAttitude = currentTrial.InitialAttitude;
         currentPhase = Phase.Invitation;
         isPlayerInC = false;
+        hasEnteredCThisTrial = false;
+        hasLeftCAfterEnter = false;
         isTerminal = false;
         isTrialCompleting = false;
 
@@ -166,6 +170,17 @@ public class CamilaAttitudeController : MonoBehaviour
 
         isPlayerInC = true;
 
+        if (hasLeftCAfterEnter)
+        {
+            CancelStayAtCTimer();
+            currentAttitude = Attitude.Neutral;
+            currentPhase = Phase.Ignore;
+            isTerminal = true;
+            NotifyStateChanged("Returned to C after leaving");
+            CompleteTrialAndAdvance("Ignore");
+            return;
+        }
+
         if (currentPhase == Phase.Invitation)
         {
             Attitude invitationAttitude = currentAttitude;
@@ -176,11 +191,17 @@ public class CamilaAttitudeController : MonoBehaviour
             PlayResponse();
         }
 
+        hasEnteredCThisTrial = true;
         RestartStayAtCTimer();
     }
 
     public void OnPlayerExitC()
     {
+        if (hasEnteredCThisTrial && !isTerminal)
+        {
+            hasLeftCAfterEnter = true;
+        }
+
         isPlayerInC = false;
         CancelStayAtCTimer();
     }
