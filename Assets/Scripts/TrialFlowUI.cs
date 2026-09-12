@@ -110,11 +110,11 @@ public class TrialFlowUI : MonoBehaviour
     void OnRestartClicked()
     {
         isStarted = true;
-        Debug.Log(
-            $"[AudioDebug] Restart clicked. " +
-            $"agentController={(agentController != null ? agentController.name : "<null>")} " +
-            $"camilaController={(camilaController != null ? camilaController.name : "<null>")} " +
-            $"time={Time.time:F3} frame={Time.frameCount}");
+        // Debug.Log(
+        //     $"[AudioDebug] Restart clicked. " +
+        //     $"agentController={(agentController != null ? agentController.name : "<null>")} " +
+        //     $"camilaController={(camilaController != null ? camilaController.name : "<null>")} " +
+        //     $"time={Time.time:F3} frame={Time.frameCount}");
 
         if (agentController != null)
         {

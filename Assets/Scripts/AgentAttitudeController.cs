@@ -131,7 +131,7 @@ public class AgentAttitudeController : MonoBehaviour
 
     public void OnRestartClicked()
     {
-        Debug.Log($"[AudioDebug] AgentAttitudeController.OnRestartClicked on '{name}' time={Time.time:F3} frame={Time.frameCount}");
+        // Debug.Log($"[AudioDebug] AgentAttitudeController.OnRestartClicked on '{name}' time={Time.time:F3} frame={Time.frameCount}");
         CancelStayAtCTimer();
         StartNewSession();
         waitingForNextTrial = false;
@@ -443,19 +443,19 @@ public class AgentAttitudeController : MonoBehaviour
 
         int stateHash = Animator.StringToHash(stateName);
 
-        Debug.Log(
-            $"[AudioDebug] PlayResponse request agent='{GetAgentName()}' controller='{name}' " +
-            $"animator='{GetHierarchyPath(animator.transform)}' state='{stateName}' " +
-            $"phase={currentPhase} attitude={currentAttitude} " +
-            $"currentShortHash={animator.GetCurrentAnimatorStateInfo(0).shortNameHash} targetHash={stateHash} " +
-            $"time={Time.time:F3} frame={Time.frameCount}");
+        // Debug.Log(
+        //     $"[AudioDebug] PlayResponse request agent='{GetAgentName()}' controller='{name}' " +
+        //     $"animator='{GetHierarchyPath(animator.transform)}' state='{stateName}' " +
+        //     $"phase={currentPhase} attitude={currentAttitude} " +
+        //     $"currentShortHash={animator.GetCurrentAnimatorStateInfo(0).shortNameHash} targetHash={stateHash} " +
+        //     $"time={Time.time:F3} frame={Time.frameCount}");
 
         if (animator.GetCurrentAnimatorStateInfo(0).shortNameHash == stateHash)
         {
-            Debug.Log(
-                $"[AudioDebug] PlayResponse target is already current state. " +
-                $"Fading to idle first: idle='{profile.IdleState}' target='{stateName}' " +
-                $"time={Time.time:F3} frame={Time.frameCount}");
+            // Debug.Log(
+            //     $"[AudioDebug] PlayResponse target is already current state. " +
+            //     $"Fading to idle first: idle='{profile.IdleState}' target='{stateName}' " +
+            //     $"time={Time.time:F3} frame={Time.frameCount}");
             PlayIdle(animator, profile);
             return;
         }
@@ -548,10 +548,10 @@ public class AgentAttitudeController : MonoBehaviour
             return;
         }
 
-        Debug.Log(
-            $"[AudioDebug] ResetAnimatorForNewTrial agent='{GetAgentName()}' controller='{name}' " +
-            $"animator='{GetHierarchyPath(animator.transform)}' idle='{profile.IdleState}' " +
-            $"time={Time.time:F3} frame={Time.frameCount}");
+        // Debug.Log(
+        //     $"[AudioDebug] ResetAnimatorForNewTrial agent='{GetAgentName()}' controller='{name}' " +
+        //     $"animator='{GetHierarchyPath(animator.transform)}' idle='{profile.IdleState}' " +
+        //     $"time={Time.time:F3} frame={Time.frameCount}");
 
         animator.Rebind();
         animator.Update(0f);
@@ -573,10 +573,10 @@ public class AgentAttitudeController : MonoBehaviour
             0f
         );
 
-        Debug.Log(
-            $"[AudioDebug] PlayIdle agent='{GetAgentName()}' controller='{name}' " +
-            $"animator='{GetHierarchyPath(animator.transform)}' idle='{profile.IdleState}' " +
-            $"time={Time.time:F3} frame={Time.frameCount}");
+        // Debug.Log(
+        //     $"[AudioDebug] PlayIdle agent='{GetAgentName()}' controller='{name}' " +
+        //     $"animator='{GetHierarchyPath(animator.transform)}' idle='{profile.IdleState}' " +
+        //     $"time={Time.time:F3} frame={Time.frameCount}");
     }
 
     void HandleAgentChanged()

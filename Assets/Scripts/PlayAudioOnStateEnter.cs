@@ -31,27 +31,27 @@ public class PlayAudioOnStateEnter : StateMachineBehaviour
                 audioSource = animator.gameObject.AddComponent<AudioSource>();
                 audioSource.playOnAwake = false;
                 audioSource.spatialBlend = 1f;
-                Debug.Log($"[AudioDebug] Added runtime AudioSource to {GetHierarchyPath(audioSource.transform)} for animator {GetHierarchyPath(animator.transform)}.");
+                // Debug.Log($"[AudioDebug] Added runtime AudioSource to {GetHierarchyPath(audioSource.transform)} for animator {GetHierarchyPath(animator.transform)}.");
             }
         }
 
         if (audioClip != null)
         {
-            Debug.Log(
-                $"[AudioDebug] PlayOneShot clip='{audioClip.name}' " +
-                $"animator='{GetHierarchyPath(animator.transform)}' " +
-                $"source='{GetHierarchyPath(audioSource.transform)}' " +
-                $"layer={layerIndex} shortHash={stateInfo.shortNameHash} fullHash={stateInfo.fullPathHash} " +
-                $"time={Time.time:F3} frame={Time.frameCount}");
+            // Debug.Log(
+            //     $"[AudioDebug] PlayOneShot clip='{audioClip.name}' " +
+            //     $"animator='{GetHierarchyPath(animator.transform)}' " +
+            //     $"source='{GetHierarchyPath(audioSource.transform)}' " +
+            //     $"layer={layerIndex} shortHash={stateInfo.shortNameHash} fullHash={stateInfo.fullPathHash} " +
+            //     $"time={Time.time:F3} frame={Time.frameCount}");
             audioSource.PlayOneShot(audioClip);
         }
         else
         {
-            Debug.Log(
-                $"[AudioDebug] State entered with no audio clip " +
-                $"animator='{GetHierarchyPath(animator.transform)}' " +
-                $"layer={layerIndex} shortHash={stateInfo.shortNameHash} fullHash={stateInfo.fullPathHash} " +
-                $"time={Time.time:F3} frame={Time.frameCount}");
+            // Debug.Log(
+            //     $"[AudioDebug] State entered with no audio clip " +
+            //     $"animator='{GetHierarchyPath(animator.transform)}' " +
+            //     $"layer={layerIndex} shortHash={stateInfo.shortNameHash} fullHash={stateInfo.fullPathHash} " +
+            //     $"time={Time.time:F3} frame={Time.frameCount}");
         }
     }
 
