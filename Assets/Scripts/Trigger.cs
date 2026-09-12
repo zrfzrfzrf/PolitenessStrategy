@@ -8,6 +8,9 @@ public class Trigger : MonoBehaviour
     [SerializeField] string tagFilter;
     [SerializeField, Min(0.1f)] float dwellConfirmSeconds = 1f;
     [SerializeField, Min(0f)] float maxPresenceSpeed = 0.2f;
+    [SerializeField] bool requireFacing;
+    [SerializeField] Vector3 requiredForward = new Vector3(0f, 0f, -1f);
+    [SerializeField, Min(0f)] float facingToleranceDegrees = 30f;
     [SerializeField] UnityEvent onTriggerEnter;
     [SerializeField] UnityEvent onTriggerExit;
     [SerializeField] Animator animator;
@@ -15,11 +18,13 @@ public class Trigger : MonoBehaviour
     public string animationTriggerName;
 
     [SerializeField] string zoneId;
+    const string CenterEyeName = "CenterEyeAnchor";
 
     readonly List<float> speedSamples = new List<float>();
     readonly List<float> sampleTimes = new List<float>();
 
     Transform trackedTransform;
+    Transform facingTransform;
     Vector3 lastPosition;
     float enterTime;
     bool isInside;
@@ -72,6 +77,11 @@ public class Trigger : MonoBehaviour
             return;
         }
 
+        if (requireFacing && !IsFacingRequiredDirection())
+        {
+            return;
+        }
+
         ConfirmPresence();
     }
 
@@ -83,6 +93,7 @@ public class Trigger : MonoBehaviour
         }
 
         trackedTransform = other.transform.root;
+        facingTransform = FindFacingTransform(trackedTransform);
         lastPosition = trackedTransform.position;
         enterTime = Time.time;
         speedSamples.Clear();
@@ -106,6 +117,7 @@ public class Trigger : MonoBehaviour
         speedSamples.Clear();
         sampleTimes.Clear();
         trackedTransform = null;
+        facingTransform = null;
 
         Debug.Log("player exited: " + gameObject.name);
         ZoneEventBus.Report(zoneId, "exit");
@@ -134,6 +146,45 @@ public class Trigger : MonoBehaviour
         return speeds.Length % 2 == 0
             ? (speeds[mid - 1] + speeds[mid]) * 0.5f
             : speeds[mid];
+    }
+
+    bool IsFacingRequiredDirection()
+    {
+        Transform facing = facingTransform != null ? facingTransform : trackedTransform;
+        if (facing == null)
+        {
+            return false;
+        }
+
+        Vector3 forward = facing.forward;
+        forward.y = 0f;
+        Vector3 required = requiredForward;
+        required.y = 0f;
+
+        if (forward.sqrMagnitude < 0.0001f || required.sqrMagnitude < 0.0001f)
+        {
+            return false;
+        }
+
+        return Vector3.Angle(forward.normalized, required.normalized) <= facingToleranceDegrees;
+    }
+
+    static Transform FindFacingTransform(Transform root)
+    {
+        if (root == null)
+        {
+            return null;
+        }
+
+        foreach (Transform child in root.GetComponentsInChildren<Transform>(true))
+        {
+            if (child.name == CenterEyeName)
+            {
+                return child;
+            }
+        }
+
+        return root;
     }
 
     bool MatchesTagFilter(Collider other)
