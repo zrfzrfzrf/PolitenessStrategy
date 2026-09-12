@@ -13,7 +13,7 @@ public class TrialFlowUI : MonoBehaviour
     const string CenterEyeName = "CenterEyeAnchor";
     const float StartPromptSeconds = 3f;
     const float RequiredStartYawDegrees = -45f;
-    const float FacingToleranceDegrees = 45f;
+    const float FacingToleranceDegrees = 30f;
 
     Vector3 startCenter = Vector3.zero;
     const float StartRadius = 1f;
@@ -408,12 +408,11 @@ public class TrialFlowUI : MonoBehaviour
     static bool IsFacingWrongDirection(Transform player)
     {
         Vector3 forward = player.forward;
-        forward.y = 0f;
-        if (forward.sqrMagnitude < 0.0001f)
-        {
-            return false;
-        }
-
+        // forward.y = 0f;
+        // if (forward.sqrMagnitude < 0.0001f)
+        // {
+        //     return false;
+        // }
         Vector3 requiredForward = Quaternion.Euler(0f, RequiredStartYawDegrees, 0f) * Vector3.forward;
         return Vector3.Angle(forward.normalized, requiredForward) > FacingToleranceDegrees;
     }
