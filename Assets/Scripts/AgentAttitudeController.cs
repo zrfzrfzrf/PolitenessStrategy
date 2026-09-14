@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
@@ -493,12 +493,9 @@ public class AgentAttitudeController : MonoBehaviour
 
         if (animator.GetCurrentAnimatorStateInfo(0).shortNameHash == stateHash)
         {
-            // Debug.Log(
-            //     $"[AudioDebug] PlayResponse target is already current state. " +
-            //     $"Fading to idle first: idle='{profile.IdleState}' target='{stateName}' " +
-            //     $"time={Time.time:F3} frame={Time.frameCount}");
-            PlayIdle(animator, profile);
-            return;
+            // 先立即进入 Idle，再由下方代码重新进入目标动画。
+            animator.Play(profile.IdleState, 0, 0f);
+            animator.Update(0f);
         }
 
         animator.CrossFade(stateHash, profile.CrossFadeSeconds, 0, 0f);
