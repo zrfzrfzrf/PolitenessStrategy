@@ -5,7 +5,7 @@ using UnityEngine.UI;
 using static QuestionnaireData;
 
 // World-space questionnaire panel with a dimmed backdrop, answered with the right controller ray + trigger
-// (mouse in the editor without a VR rig). One question per page, 9 options, Confirm to continue.
+// (mouse in the editor without a VR rig). One question per page, 9 options, choosing one moves on.
 public class QuestionnaireUI : MonoBehaviour
 {
     const float PanelDistance = 1.5f;
@@ -13,10 +13,8 @@ public class QuestionnaireUI : MonoBehaviour
 
     static readonly Color NormalColor = new Color(0.25f, 0.25f, 0.25f);
     static readonly Color HoverColor = new Color(0.4f, 0.4f, 0.4f);
-    static readonly Color SelectedColor = new Color(0.2f, 0.6f, 1f);
-    static readonly Color DisabledColor = new Color(0.12f, 0.12f, 0.12f);
 
-    readonly Button[] buttons = new Button[10];
+    readonly Button[] buttons = new Button[9];
     readonly Text[] labels = new Text[9];
 
     Material overlay;
@@ -30,7 +28,6 @@ public class QuestionnaireUI : MonoBehaviour
     Question[] questions;
     int[] answers;
     int index;
-    int selected;
     Action<int[]> onDone;
 
     public bool IsOpen => panel.gameObject.activeSelf;
@@ -51,11 +48,9 @@ public class QuestionnaireUI : MonoBehaviour
         {
             int value = i + 1;
             float x = (i - 4) * 170f;
-            buttons[i] = MakeButton(panel.transform, new Vector2(x, 40f), new Vector2(150f, 90f), value.ToString(), () => selected = value);
+            buttons[i] = MakeButton(panel.transform, new Vector2(x, 40f), new Vector2(150f, 90f), value.ToString(), () => Answer(value));
             labels[i] = MakeText(panel.transform, new Vector2(x, -70f), new Vector2(165f, 120f), 26);
         }
-
-        buttons[9] = MakeButton(panel.transform, new Vector2(0f, -250f), new Vector2(300f, 90f), "Confirm", Confirm);
 
         ray = gameObject.AddComponent<LineRenderer>();
         ray.positionCount = 2;
@@ -112,13 +107,11 @@ public class QuestionnaireUI : MonoBehaviour
         {
             labels[i].text = question.Labels[i];
         }
-
-        selected = 0;
     }
 
-    void Confirm()
+    void Answer(int value)
     {
-        answers[index] = selected;
+        answers[index] = value;
         if (++index < questions.Length)
         {
             ShowQuestion();
@@ -157,15 +150,11 @@ public class QuestionnaireUI : MonoBehaviour
             ray.SetPosition(1, hit);
         }
 
-        buttons[9].interactable = selected > 0;
-        for (int i = 0; i < buttons.Length; i++)
+        foreach (Button button in buttons)
         {
-            Button button = buttons[i];
-            bool over = onPanel && button.interactable
+            bool over = onPanel
                 && ((RectTransform)button.transform).rect.Contains(button.transform.InverseTransformPoint(hit));
-            button.image.color = !button.interactable ? DisabledColor
-                : i == selected - 1 ? SelectedColor
-                : over ? HoverColor : NormalColor;
+            button.image.color = over ? HoverColor : NormalColor;
 
             if (over && click)
             {

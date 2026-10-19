@@ -1475,8 +1475,6 @@ MonoBehaviour:
   toggleRecordingKey: 114
   exportKey: 112
   filePrefix: Path_recording
-  exportDirectory: D:\KTH\SummerIntern\Dataset
-  exportSubdirectory: 
   writePhysiologicalCopy: 1
   physiologicalCopySubdirectory: ecg_merged
   useSessionTime: 0
@@ -2877,8 +2875,6 @@ MonoBehaviour:
   toggleRecordingKey: 114
   exportKey: 112
   filePrefix: Path_recording_test
-  exportDirectory: D:\KTH\SummerIntern\Dataset
-  exportSubdirectory: 
   writePhysiologicalCopy: 1
   physiologicalCopySubdirectory: ecg_merged
   useSessionTime: 0
@@ -8429,6 +8425,9 @@ MonoBehaviour:
   onStateChanged:
     m_PersistentCalls:
       m_Calls: []
+  roundCount: 3
+  askPerceptionPart1: 1
+  askPerceptionPart2: 0
 --- !u!114 &2137114097
 MonoBehaviour:
   m_ObjectHideFlags: 0
