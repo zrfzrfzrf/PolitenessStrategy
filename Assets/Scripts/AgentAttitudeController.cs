@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -41,8 +42,14 @@ public class AgentAttitudeController : MonoBehaviour
     [SerializeField] StrategyPlan strategyPlan;
     [SerializeField] bool enableResponses = true;
     [SerializeField] AttitudeStateEvent onStateChanged;
+    [SerializeField, Min(1)] int roundCount = 3;
+    [SerializeField, Tooltip("Ask agent perception questions 1-4 after every trial")] bool askPerceptionPart1 = true;
+    [SerializeField, Tooltip("Ask agent perception questions 5-7 after every trial")] bool askPerceptionPart2;
 
     const int DefaultTrialCount = 9;
+
+    // (title, questions, onDone) - answered by QuestionnaireUI; onDone gets answers 1-9.
+    public event Action<string, QuestionnaireData.Question[], Action<int[]>> OnAskQuestions;
 
     int[] trialOrder = new int[0];
 
@@ -57,9 +64,11 @@ public class AgentAttitudeController : MonoBehaviour
     bool isTerminal;
     bool isTrialCompleting;
     bool waitingForNextTrial;
+    bool waitingForNextRound;
     bool sessionStarted;
     bool recordTrialEvents;
     int currentTrialIndex;
+    TrialRecord record;
     Coroutine stayAtCCoroutine;
 
     public Attitude CurrentAttitude => currentAttitude;
@@ -67,11 +76,12 @@ public class AgentAttitudeController : MonoBehaviour
     public bool IsTerminal => isTerminal;
     public bool IsPlayerInC => isPlayerInC;
     public bool IsWaitingForNextTrial => waitingForNextTrial;
-    public int TotalTrials => GetTrialCount();
+    public bool IsInRoundBreak => waitingForNextRound;
+    public int TrialsPerRound => GetTrialCount();
+    public int TotalTrials => TrialsPerRound * roundCount;
     public int CompletedTrialCount => Mathf.Min(currentTrialIndex, TotalTrials);
-    public int CurrentTrialNumber => isTerminal && currentTrialIndex >= TotalTrials
-        ? TotalTrials
-        : Mathf.Min(currentTrialIndex + 1, TotalTrials);
+    public int CurrentRound => Mathf.Min(currentTrialIndex, TotalTrials - 1) / TrialsPerRound + 1;
+    public int CurrentTrialInRound => Mathf.Min(currentTrialIndex, TotalTrials - 1) % TrialsPerRound + 1;
 
     void Awake()
     {
@@ -108,6 +118,18 @@ public class AgentAttitudeController : MonoBehaviour
         BeginCurrentTrial();
     }
 
+    public void OnNextRoundClicked()
+    {
+        if (!waitingForNextRound)
+        {
+            return;
+        }
+
+        waitingForNextRound = false;
+        waitingForNextTrial = true;
+    }
+
+    // Operator override: skips the current trial without questionnaires or log rows.
     public void ForceNextTrial()
     {
         CancelStayAtCTimer();
@@ -120,16 +142,14 @@ public class AgentAttitudeController : MonoBehaviour
         }
 
         waitingForNextTrial = false;
+        waitingForNextRound = false;
 
         if (IsSessionComplete())
         {
             isTerminal = true;
             currentPhase = Phase.Praise;
             Debug.Log($"All {TotalTrials} attitude trials are complete.");
-            if (recordTrialEvents)
-            {
-                TrialEventBus.ReportSessionEnd();
-            }
+            Mark("end");
             return;
         }
 
@@ -142,7 +162,9 @@ public class AgentAttitudeController : MonoBehaviour
         CancelStayAtCTimer();
         StartNewSession();
         waitingForNextTrial = false;
+        waitingForNextRound = false;
         recordTrialEvents = true;
+        ResultsWriter.NewSession();
         BeginCurrentTrial();
     }
 
@@ -156,10 +178,7 @@ public class AgentAttitudeController : MonoBehaviour
             isTerminal = true;
             currentPhase = Phase.Praise;
             Debug.Log($"All {TotalTrials} attitude trials are complete.");
-            if (recordTrialEvents)
-            {
-                TrialEventBus.ReportSessionEnd();
-            }
+            Mark("end");
             return;
         }
 
@@ -181,10 +200,17 @@ public class AgentAttitudeController : MonoBehaviour
             $"Invitation={currentAttitude}, EnterC={currentTrialEnterCAttitude}, " +
             $"DirectF={currentDirectFStrategy}, IndirectF={currentIndirectFStrategy}");
 
-        if (recordTrialEvents)
+        record = new TrialRecord
         {
-            TrialEventBus.ReportTrialStart(CurrentTrialNumber);
-        }
+            Round = CurrentRound,
+            Trial = CurrentTrialInRound,
+            Invitation = currentAttitude.ToString(),
+            EnterC = currentTrialEnterCAttitude.ToString(),
+            DirectF = currentDirectFStrategy.ToString(),
+            IndirectF = currentIndirectFStrategy.ToString(),
+            StartTime = ResultsWriter.Now
+        };
+        Mark($"R{record.Round}T{record.Trial}");
         ResetAnimatorForNewTrial();
         NotifyStateChanged("Trial started");
         PlayResponse();
@@ -208,7 +234,7 @@ public class AgentAttitudeController : MonoBehaviour
             isTerminal = true;
             NotifyStateChanged("Returned to C after leaving");
             PlayTerminalResponse();
-            CompleteTrialAndAdvance("Ignore");
+            CompleteTrialAndAdvance("Ignore", "return_to_C");
             return;
         }
 
@@ -255,27 +281,29 @@ public class AgentAttitudeController : MonoBehaviour
             ? "Entered F directly; EnterC strategy skipped"
             : "Entered F");
         PlayFResponse(skippedEnterC);
-        CompleteTrialAndAdvance("Praise");
+        CompleteTrialAndAdvance("Praise", skippedEnterC ? "direct_F" : "via_C");
     }
 
+    // trialOrder holds roundCount blocks of plan indices; each block is shuffled on its own.
     void StartNewSession()
     {
-        int trialCount = GetTrialCount();
-        trialOrder = new int[trialCount];
+        int perRound = GetTrialCount();
+        trialOrder = new int[perRound * roundCount];
 
-        for (int i = 0; i < trialCount; i++)
+        for (int i = 0; i < trialOrder.Length; i++)
         {
-            trialOrder[i] = i;
+            trialOrder[i] = i % perRound;
         }
 
         if (ShouldShuffleTrials())
         {
-            for (int i = trialOrder.Length - 1; i > 0; i--)
+            for (int start = 0; start < trialOrder.Length; start += perRound)
             {
-                int swapIndex = UnityEngine.Random.Range(0, i + 1);
-                int temp = trialOrder[i];
-                trialOrder[i] = trialOrder[swapIndex];
-                trialOrder[swapIndex] = temp;
+                for (int i = perRound - 1; i > 0; i--)
+                {
+                    int swap = UnityEngine.Random.Range(0, i + 1);
+                    (trialOrder[start + i], trialOrder[start + swap]) = (trialOrder[start + swap], trialOrder[start + i]);
+                }
             }
         }
 
@@ -296,9 +324,9 @@ public class AgentAttitudeController : MonoBehaviour
         return currentTrialIndex >= TotalTrials;
     }
 
-    string GetProgressLabel()
+    public string GetProgressLabel()
     {
-        return $"{CurrentTrialNumber}/{TotalTrials}";
+        return $"Round {CurrentRound}/{roundCount}, Trial {CurrentTrialInRound}/{TrialsPerRound}";
     }
 
     int GetTrialCount()
@@ -386,10 +414,11 @@ public class AgentAttitudeController : MonoBehaviour
 
         NotifyStateChanged("Stayed at C");
         PlayTerminalResponse();
-        CompleteTrialAndAdvance("Ignore");
+        CompleteTrialAndAdvance("Ignore", "stay_timeout");
     }
 
-    void CompleteTrialAndAdvance(string outcome)
+    // Trial over -> trial questionnaire -> (end of round: TLX -> rest until Next_round) -> walk back to start.
+    void CompleteTrialAndAdvance(string outcome, string route)
     {
         if (isTrialCompleting)
         {
@@ -397,22 +426,69 @@ public class AgentAttitudeController : MonoBehaviour
         }
 
         isTrialCompleting = true;
+        record.Outcome = outcome;
+        record.Route = route;
+        record.EndTime = ResultsWriter.Now;
         currentTrialIndex++;
 
-        Debug.Log($"Trial completed with {outcome}. Finished {CompletedTrialCount}/{TotalTrials}.");
+        Debug.Log($"Trial completed with {outcome} ({route}). Finished {CompletedTrialCount}/{TotalTrials}.");
 
-        if (IsSessionComplete())
+        string label = $"R{record.Round}T{record.Trial}";
+        int first = askPerceptionPart1 ? 0 : QuestionnaireData.Part1Count;
+        int last = askPerceptionPart2 ? QuestionnaireData.Perception.Length : QuestionnaireData.Part1Count;
+        var asked = QuestionnaireData.Perception.Skip(first).Take(last - first).ToArray();
+
+        Mark(label + "_Q");
+        OnAskQuestions($"Round {record.Round}, Trial {record.Trial}", asked, answers =>
         {
-            Debug.Log($"All {TotalTrials} attitude trials are complete.");
+            Array.Copy(answers, 0, record.Answers, first, answers.Length);
+            Mark(label + "_Qend");
             if (recordTrialEvents)
             {
-                TrialEventBus.ReportSessionEnd();
+                ResultsWriter.WriteTrial(record);
             }
+
+            AfterTrialQuestions();
+        });
+    }
+
+    void AfterTrialQuestions()
+    {
+        if (currentTrialIndex % TrialsPerRound != 0)
+        {
+            waitingForNextTrial = true;
+            Debug.Log("Trial finished. Walk back, then click next-trial.");
             return;
         }
 
-        waitingForNextTrial = true;
-        Debug.Log("Trial finished. Walk back, then click next-trial.");
+        int round = currentTrialIndex / TrialsPerRound;
+        Mark($"R{round}_TLX");
+        OnAskQuestions($"Round {round} complete", QuestionnaireData.Tlx, answers =>
+        {
+            Mark($"R{round}_TLXend");
+            if (recordTrialEvents)
+            {
+                ResultsWriter.WriteRound(round, answers);
+            }
+
+            if (IsSessionComplete())
+            {
+                Debug.Log($"All {TotalTrials} attitude trials are complete.");
+                Mark("end");
+                return;
+            }
+
+            waitingForNextRound = true;
+            Mark($"R{round}_rest");
+        });
+    }
+
+    void Mark(string label)
+    {
+        if (recordTrialEvents)
+        {
+            TrialEventBus.Report(label);
+        }
     }
 
     void CancelStayAtCTimer()

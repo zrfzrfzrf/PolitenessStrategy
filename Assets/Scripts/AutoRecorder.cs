@@ -36,6 +36,7 @@ public sealed class AutoRecorder : MonoBehaviour
         }
 
         ExciteOMeterManager.ConfigureSessionClock(useMonotonicSessionClock);
+        ResultsWriter.ParticipantId = sessionId;
     }
 
     private void OnEnable()

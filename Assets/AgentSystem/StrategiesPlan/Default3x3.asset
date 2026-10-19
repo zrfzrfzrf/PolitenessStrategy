@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 14079b68c16010c4aa6ee71c931042ad, type: 3}
   m_Name: Default3x3
   m_EditorClassIdentifier: 
-  shuffleOnStart: 0
+  shuffleOnStart: 1
   trials:
   - invitationAttitude: 0
     enterCAttitude: 0
