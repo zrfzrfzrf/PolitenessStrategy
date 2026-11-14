@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
@@ -11,8 +12,12 @@ public class QuestionnaireUI : MonoBehaviour
     const float PanelDistance = 1.5f;
     const float CanvasScale = 0.0013f;
 
-    static readonly Color NormalColor = new Color(0.25f, 0.25f, 0.25f);
-    static readonly Color HoverColor = new Color(0.4f, 0.4f, 0.4f);
+    const float FlashStepSeconds = 0.1f;
+
+    static readonly Color NormalColor = new Color(0.6f, 0.6f, 0.6f);
+    static readonly Color HoverColor = new Color(0.75f, 0.75f, 0.75f);
+    static readonly Color LightColor = new Color(0.9f, 0.9f, 0.9f);
+    static readonly Color DigitColor = new Color(0.1f, 0.1f, 0.1f);
 
     readonly Button[] buttons = new Button[9];
     readonly Text[] labels = new Text[9];
@@ -23,6 +28,7 @@ public class QuestionnaireUI : MonoBehaviour
     LineRenderer ray;
     Camera view;
     Transform rightHand;
+    Button flashing;
 
     string title;
     Question[] questions;
@@ -40,7 +46,7 @@ public class QuestionnaireUI : MonoBehaviour
         MakeImage(dim.transform, Vector2.zero, new Vector2(4000f, 4000f), new Color(0f, 0f, 0f, 0.8f));
 
         panel = MakeCanvas("Panel", new Vector2(1600f, 700f), 0);
-        MakeImage(panel.transform, Vector2.zero, new Vector2(1600f, 700f), new Color(0.1f, 0.1f, 0.1f, 0.95f));
+        MakeImage(panel.transform, Vector2.zero, new Vector2(1600f, 700f), new Color(0.9f, 0.9f, 0.9f, 0.4f));
         titleText = MakeText(panel.transform, new Vector2(0f, 300f), new Vector2(1500f, 60f), 36);
         questionText = MakeText(panel.transform, new Vector2(0f, 170f), new Vector2(1500f, 130f), 44);
 
@@ -48,7 +54,7 @@ public class QuestionnaireUI : MonoBehaviour
         {
             int value = i + 1;
             float x = (i - 4) * 170f;
-            buttons[i] = MakeButton(panel.transform, new Vector2(x, 40f), new Vector2(150f, 90f), value.ToString(), () => Answer(value));
+            buttons[i] = MakeButton(panel.transform, new Vector2(x, 40f), new Vector2(150f, 90f), value.ToString(), () => StartCoroutine(Flash(value)));
             labels[i] = MakeText(panel.transform, new Vector2(x, -70f), new Vector2(165f, 120f), 26);
         }
 
@@ -93,6 +99,8 @@ public class QuestionnaireUI : MonoBehaviour
 
     public void Close()
     {
+        StopAllCoroutines();
+        flashing = null;
         dim.gameObject.SetActive(false);
         panel.gameObject.SetActive(false);
         ray.enabled = false;
@@ -106,6 +114,32 @@ public class QuestionnaireUI : MonoBehaviour
         for (int i = 0; i < 9; i++)
         {
             labels[i].text = question.Labels[i];
+        }
+    }
+
+    // Blink the chosen button (light, own gray, light) with a short haptic pulse, then move on.
+    IEnumerator Flash(int value)
+    {
+        Button button = buttons[value - 1];
+        flashing = button;
+        Vibrate(0.5f);
+        foreach (Color color in new[] { LightColor, NormalColor, LightColor })
+        {
+            button.image.color = color;
+            yield return new WaitForSeconds(FlashStepSeconds);
+            Vibrate(0f);
+        }
+
+        button.image.color = NormalColor;
+        flashing = null;
+        Answer(value);
+    }
+
+    void Vibrate(float amplitude)
+    {
+        if (rightHand != null)
+        {
+            OVRInput.SetControllerVibration(1f, amplitude, OVRInput.Controller.RTouch);
         }
     }
 
@@ -148,6 +182,11 @@ public class QuestionnaireUI : MonoBehaviour
         {
             ray.SetPosition(0, pointer.origin);
             ray.SetPosition(1, hit);
+        }
+
+        if (flashing != null)
+        {
+            return;
         }
 
         foreach (Button button in buttons)
@@ -219,6 +258,7 @@ public class QuestionnaireUI : MonoBehaviour
 
         Text text = MakeText(image.transform, Vector2.zero, size, 40);
         text.text = label;
+        text.color = DigitColor;
         text.alignment = TextAnchor.MiddleCenter;
         return button;
     }
