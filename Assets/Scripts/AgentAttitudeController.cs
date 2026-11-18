@@ -43,6 +43,8 @@ public class AgentAttitudeController : MonoBehaviour
     [SerializeField] bool enableResponses = true;
     [SerializeField] AttitudeStateEvent onStateChanged;
     [SerializeField, Min(1)] int roundCount = 3;
+    [SerializeField, Tooltip("Keep this seed identical across participants to use the same randomized Latin square.")] int latinSquareSeed = 2026;
+    [SerializeField, Min(0), Tooltip("Zero-based participant sequence: assign 0, 1, 2, ... across participants. Wraps at TrialsPerRound.")] int latinSquareSequenceIndex;
     [SerializeField, Tooltip("Ask agent perception questions 1-4 after every trial")] bool askPerceptionPart1 = true;
     [SerializeField, Tooltip("Ask agent perception questions 5-7 after every trial")] bool askPerceptionPart2;
 
@@ -284,7 +286,7 @@ public class AgentAttitudeController : MonoBehaviour
         CompleteTrialAndAdvance("Praise", skippedEnterC ? "direct_F" : "via_C");
     }
 
-    // trialOrder holds roundCount blocks of plan indices; each block is shuffled on its own.
+    // Each round uses a row of one reproducible randomized Latin square.
     void StartNewSession()
     {
         int perRound = GetTrialCount();
@@ -297,18 +299,40 @@ public class AgentAttitudeController : MonoBehaviour
 
         if (ShouldShuffleTrials())
         {
-            for (int start = 0; start < trialOrder.Length; start += perRound)
+            var random = new System.Random(latinSquareSeed);
+            int[] conditions = Enumerable.Range(0, perRound).ToArray();
+            int[] columns = Enumerable.Range(0, perRound).ToArray();
+            int[] rows = Enumerable.Range(0, perRound).ToArray();
+            ShuffleLatinSquareAxis(conditions, random);
+            ShuffleLatinSquareAxis(columns, random);
+            ShuffleLatinSquareAxis(rows, random);
+
+            int firstRow = Mathf.Max(0, latinSquareSequenceIndex) % perRound;
+            for (int round = 0; round < roundCount; round++)
             {
-                for (int i = perRound - 1; i > 0; i--)
+                int row = rows[(firstRow + round) % perRound];
+                for (int position = 0; position < perRound; position++)
                 {
-                    int swap = UnityEngine.Random.Range(0, i + 1);
-                    (trialOrder[start + i], trialOrder[start + swap]) = (trialOrder[start + swap], trialOrder[start + i]);
+                    trialOrder[round * perRound + position] =
+                        conditions[(row + columns[position]) % perRound];
                 }
             }
+
+            Debug.Log($"Randomized Latin square: seed={latinSquareSeed}, sequence={firstRow} (zero-based). " +
+                $"Plan indices (zero-based): {string.Join(",", trialOrder)}");
         }
 
         currentTrialIndex = 0;
         sessionStarted = true;
+    }
+
+    static void ShuffleLatinSquareAxis(int[] values, System.Random random)
+    {
+        for (int i = values.Length - 1; i > 0; i--)
+        {
+            int swap = random.Next(i + 1);
+            (values[i], values[swap]) = (values[swap], values[i]);
+        }
     }
 
     void EnsureSessionStarted()

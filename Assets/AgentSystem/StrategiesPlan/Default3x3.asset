@@ -17,36 +17,36 @@ MonoBehaviour:
   - invitationAttitude: 0
     enterCAttitude: 0
     directFStrategy: 0
-    indirectFStrategy: 1
+    indirectFStrategy: 0
   - invitationAttitude: 0
     enterCAttitude: 1
     directFStrategy: 0
-    indirectFStrategy: 1
+    indirectFStrategy: 0
   - invitationAttitude: 0
     enterCAttitude: 2
     directFStrategy: 0
-    indirectFStrategy: 1
+    indirectFStrategy: 0
   - invitationAttitude: 1
     enterCAttitude: 0
     directFStrategy: 0
-    indirectFStrategy: 1
+    indirectFStrategy: 0
   - invitationAttitude: 1
     enterCAttitude: 1
     directFStrategy: 0
-    indirectFStrategy: 1
+    indirectFStrategy: 0
   - invitationAttitude: 1
     enterCAttitude: 2
     directFStrategy: 0
-    indirectFStrategy: 1
+    indirectFStrategy: 0
   - invitationAttitude: 2
     enterCAttitude: 0
     directFStrategy: 0
-    indirectFStrategy: 1
+    indirectFStrategy: 0
   - invitationAttitude: 2
     enterCAttitude: 1
     directFStrategy: 0
-    indirectFStrategy: 1
+    indirectFStrategy: 0
   - invitationAttitude: 2
     enterCAttitude: 2
     directFStrategy: 0
-    indirectFStrategy: 1
+    indirectFStrategy: 0

@@ -6,6 +6,7 @@ public class AgentManager : MonoBehaviour
     [SerializeField] Transform visualSlot;
     [SerializeField] AgentDefinition currentAgent;
     [SerializeField] bool instantiateOnAwake = true;
+    [SerializeField] RuntimeAnimatorController controllerOverride;
     [SerializeField] AgentDefinition[] availableAgents;
     [SerializeField] int selectedAgentIndex;
 
@@ -72,9 +73,12 @@ public class AgentManager : MonoBehaviour
         }
 
         AgentAnimationProfile profile = currentAgent.AnimationProfile;
-        if (profile != null && profile.Controller != null)
+        RuntimeAnimatorController controller = controllerOverride != null
+            ? controllerOverride
+            : profile?.Controller;
+        if (controller != null)
         {
-            currentAnimator.runtimeAnimatorController = profile.Controller;
+            currentAnimator.runtimeAnimatorController = controller;
         }
 
         OnAgentChanged?.Invoke();

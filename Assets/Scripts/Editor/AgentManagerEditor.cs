@@ -7,6 +7,7 @@ public class AgentManagerEditor : Editor
     SerializedProperty visualSlot;
     SerializedProperty currentAgent;
     SerializedProperty instantiateOnAwake;
+    SerializedProperty controllerOverride;
     SerializedProperty availableAgents;
     SerializedProperty selectedAgentIndex;
 
@@ -15,6 +16,7 @@ public class AgentManagerEditor : Editor
         visualSlot = serializedObject.FindProperty("visualSlot");
         currentAgent = serializedObject.FindProperty("currentAgent");
         instantiateOnAwake = serializedObject.FindProperty("instantiateOnAwake");
+        controllerOverride = serializedObject.FindProperty("controllerOverride");
         availableAgents = serializedObject.FindProperty("availableAgents");
         selectedAgentIndex = serializedObject.FindProperty("selectedAgentIndex");
     }
@@ -25,6 +27,7 @@ public class AgentManagerEditor : Editor
 
         EditorGUILayout.PropertyField(visualSlot);
         EditorGUILayout.PropertyField(instantiateOnAwake);
+        EditorGUILayout.PropertyField(controllerOverride);
         EditorGUILayout.Space();
 
         EditorGUILayout.PropertyField(availableAgents, true);
