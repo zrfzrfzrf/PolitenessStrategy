@@ -17,8 +17,6 @@ public class DataExport : MonoBehaviour
     [SerializeField] KeyCode toggleRecordingKey = KeyCode.R;
     [SerializeField] KeyCode exportKey = KeyCode.P;
     [SerializeField] string filePrefix = "Path_recording";
-    [SerializeField] string exportDirectory = @"D:\KTH\SummerIntern\Dataset";
-    [SerializeField] string exportSubdirectory;
     [SerializeField] bool writePhysiologicalCopy = true;
     [SerializeField] string physiologicalCopySubdirectory = "ecg_merged";
 
@@ -149,8 +147,7 @@ public class DataExport : MonoBehaviour
 
         string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture);
         string fileName = $"{filePrefix}_{timestamp}.csv";
-        string directory = GetExportDirectory(GetPathExportSubdirectory());
-        Directory.CreateDirectory(directory);
+        string directory = ResultsWriter.SessionDir;
         string path = Path.Combine(directory, fileName);
 
         int sampleCount = samples.Count;
@@ -207,9 +204,9 @@ public class DataExport : MonoBehaviour
         string eventsPath = Path.Combine(directory, $"{filePrefix}_events_{timestamp}.csv");
         ExportZoneEventsCsv(eventsPath);
 
-        if (ShouldWritePhysiologicalCopy(directory))
+        if (ShouldWritePhysiologicalCopy())
         {
-            string physiologicalDirectory = GetExportDirectory(physiologicalCopySubdirectory);
+            string physiologicalDirectory = Path.Combine(ResultsWriter.RootDir, physiologicalCopySubdirectory);
             Directory.CreateDirectory(physiologicalDirectory);
             string physiologicalPath = Path.Combine(physiologicalDirectory, fileName);
             File.WriteAllText(physiologicalPath, csv.ToString(), Encoding.UTF8);
@@ -256,48 +253,11 @@ public class DataExport : MonoBehaviour
         Debug.Log($"DataExport exported {zoneEvents.Count} zone events to: {path}");
     }
 
-    string GetExportDirectory(string subdirectory = null)
+    bool ShouldWritePhysiologicalCopy()
     {
-#if UNITY_ANDROID && !UNITY_EDITOR
-        string rootDirectory = Application.persistentDataPath;
-#else
-        string rootDirectory = string.IsNullOrWhiteSpace(exportDirectory)
-            ? Application.persistentDataPath
-            : exportDirectory;
-#endif
-
-        return string.IsNullOrWhiteSpace(subdirectory)
-            ? rootDirectory
-            : Path.Combine(rootDirectory, subdirectory);
-    }
-
-    string GetPathExportSubdirectory()
-    {
-        if (!string.IsNullOrWhiteSpace(exportSubdirectory))
-        {
-            return exportSubdirectory;
-        }
-
-        return filePrefix.IndexOf("test", StringComparison.OrdinalIgnoreCase) >= 0
-            || filePrefix.IndexOf("keyboard", StringComparison.OrdinalIgnoreCase) >= 0
-                ? "keyboard_path"
-                : "vr_path";
-    }
-
-    bool ShouldWritePhysiologicalCopy(string mainDirectory)
-    {
-        if (!writePhysiologicalCopy || !ShouldIncludePhysiologicalSignals
-            || !HasAnyPhysiologicalValue()
-            || string.IsNullOrWhiteSpace(physiologicalCopySubdirectory))
-        {
-            return false;
-        }
-
-        string physiologicalDirectory = GetExportDirectory(physiologicalCopySubdirectory);
-        return !string.Equals(
-            Path.GetFullPath(mainDirectory),
-            Path.GetFullPath(physiologicalDirectory),
-            StringComparison.OrdinalIgnoreCase);
+        return writePhysiologicalCopy && ShouldIncludePhysiologicalSignals
+            && HasAnyPhysiologicalValue()
+            && !string.IsNullOrWhiteSpace(physiologicalCopySubdirectory);
     }
 
     bool HasAnyPhysiologicalValue()

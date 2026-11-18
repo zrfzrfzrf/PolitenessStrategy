@@ -8,6 +8,7 @@ public class TrialFlowUI : MonoBehaviour
     const string ReturnPrompt = "This trail is over. Please return to the starting point.";
     const string RotatePrompt = "Please rotate and face forward.";
     const string ReadyPrompt = "Correct position. Next trial will start soon.";
+    const string RestPrompt = "This round is over. Please take a rest.";
     const string KeyboardPlayerName = "player_for_keyboard_test";
     const string VrRigName = "OVRCameraRigInteraction";
     const string CenterEyeName = "CenterEyeAnchor";
@@ -29,7 +30,7 @@ public class TrialFlowUI : MonoBehaviour
     Image zoneOLight;
     Image zoneFLight;
     AgentAttitudeController agentController;
-    CamilaAttitudeController camilaController;
+    QuestionnaireUI questionnaire;
     Transform playerTransform;
     Transform vrPromptParent;
     float startPromptUntil;
@@ -42,13 +43,15 @@ public class TrialFlowUI : MonoBehaviour
     void Awake()
     {
         agentController = FindObjectOfType<AgentAttitudeController>();
-        camilaController = FindObjectOfType<CamilaAttitudeController>();
 
-        if (agentController == null && camilaController == null)
+        if (agentController == null)
         {
-            Debug.LogWarning("TrialFlowUI could not find AgentAttitudeController or CamilaAttitudeController.");
+            Debug.LogWarning("TrialFlowUI could not find AgentAttitudeController.");
             return;
         }
+
+        questionnaire = new GameObject("QuestionnaireUI").AddComponent<QuestionnaireUI>();
+        agentController.OnAskQuestions += questionnaire.Run;
 
         if (FindObjectOfType<EventSystem>() == null)
         {
@@ -67,6 +70,7 @@ public class TrialFlowUI : MonoBehaviour
 
         MakeButton(canvasObject.transform, "Next_trail", new Vector2(-200f, 30f), OnNextTrailForced);
         MakeButton(canvasObject.transform, "Start/Restart", new Vector2(200f, 30f), OnRestartClicked);
+        MakeButton(canvasObject.transform, "Next_round", new Vector2(0f, 150f), agentController.OnNextRoundClicked);
     }
 
     void Start()
@@ -110,20 +114,8 @@ public class TrialFlowUI : MonoBehaviour
     void OnRestartClicked()
     {
         isStarted = true;
-        // Debug.Log(
-        //     $"[AudioDebug] Restart clicked. " +
-        //     $"agentController={(agentController != null ? agentController.name : "<null>")} " +
-        //     $"camilaController={(camilaController != null ? camilaController.name : "<null>")} " +
-        //     $"time={Time.time:F3} frame={Time.frameCount}");
-
-        if (agentController != null)
-        {
-            agentController.OnRestartClicked();
-        }
-        else if (camilaController != null)
-        {
-            camilaController.OnRestartClicked();
-        }
+        questionnaire.Close();
+        agentController.OnRestartClicked();
 
         if (!IsSessionComplete())
         {
@@ -140,7 +132,13 @@ public class TrialFlowUI : MonoBehaviour
             return;
         }
 
-        if (IsWaitingForNextTrial())
+        if (agentController.IsInRoundBreak)
+        {
+            SetPrompt(RestPrompt);
+            return;
+        }
+
+        if (agentController.IsWaitingForNextTrial)
         {
             UpdateWaitingPrompt();
             return;
@@ -266,19 +264,12 @@ public class TrialFlowUI : MonoBehaviour
         isStarted = true;
         CancelPendingNextTrial();
 
-        if (IsSessionComplete())
+        if (IsSessionComplete() || questionnaire.IsOpen)
         {
             return;
         }
 
-        if (agentController != null)
-        {
-            agentController.ForceNextTrial();
-        }
-        else
-        {
-            camilaController.ForceNextTrial();
-        }
+        agentController.ForceNextTrial();
 
         if (!IsSessionComplete())
         {
@@ -295,19 +286,12 @@ public class TrialFlowUI : MonoBehaviour
     {
         nextTrialScheduled = false;
 
-        if (!IsWaitingForNextTrial() || IsSessionComplete())
+        if (!agentController.IsWaitingForNextTrial || IsSessionComplete())
         {
             return;
         }
 
-        if (agentController != null)
-        {
-            agentController.OnNextTrialClicked();
-        }
-        else
-        {
-            camilaController.OnNextTrialClicked();
-        }
+        agentController.OnNextTrialClicked();
 
         if (!IsSessionComplete())
         {
@@ -322,39 +306,14 @@ public class TrialFlowUI : MonoBehaviour
 
     void ShowTrailStartPrompt()
     {
-        startPromptMessage = $"Trail start: {GetProgressLabel()}";
+        startPromptMessage = $"Trail start: {agentController.GetProgressLabel()}";
         startPromptUntil = Time.time + StartPromptSeconds;
         SetPrompt(startPromptMessage);
     }
 
-    string GetProgressLabel()
-    {
-        if (agentController != null)
-        {
-            return $"{agentController.CurrentTrialNumber}/{agentController.TotalTrials}";
-        }
-
-        return AttitudeTrialSession.GetProgressLabel();
-    }
-
-    bool IsWaitingForNextTrial()
-    {
-        if (agentController != null)
-        {
-            return agentController.IsWaitingForNextTrial;
-        }
-
-        return camilaController != null && camilaController.IsWaitingForNextTrial;
-    }
-
     bool IsSessionComplete()
     {
-        if (agentController != null)
-        {
-            return agentController.CompletedTrialCount >= agentController.TotalTrials;
-        }
-
-        return AttitudeTrialSession.IsSessionComplete;
+        return agentController.CompletedTrialCount >= agentController.TotalTrials;
     }
 
     bool TryGetPlayer(out Transform player)
