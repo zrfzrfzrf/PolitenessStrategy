@@ -1467,7 +1467,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   target: {fileID: 878724900}
-  sampleInterval: 0.5
+  sampleInterval: 0.1
   recordFromStart: 1
   exportOnApplicationPause: 1
   exportOnApplicationQuit: 1
@@ -2707,7 +2707,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!136 &1069966428
 CapsuleCollider:
   m_ObjectHideFlags: 0
