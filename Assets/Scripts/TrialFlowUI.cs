@@ -8,7 +8,7 @@ public class TrialFlowUI : MonoBehaviour
     const string ReturnPrompt = "This trail is over. Please return to the starting point.";
     const string RotatePrompt = "Please rotate and face forward.";
     const string ReadyPrompt = "Correct position. Next trial will start soon.";
-    const string RestPrompt = "This round is over. Please take a rest.";
+    const string RestPrompt = "This round is over.";
     const string KeyboardPlayerName = "player_for_keyboard_test";
     const string VrRigName = "OVRCameraRigInteraction";
     const string CenterEyeName = "CenterEyeAnchor";
