@@ -99,24 +99,50 @@ public class RoomCalibration : MonoBehaviour
 
     void OnDestroy() => InProgress = false;
 
-    void OnHmdMounted() => SystemEvent("HMDMounted");
+    void OnHmdMounted() => SystemEvent("HMDMounted", true);
     void OnHmdUnmounted() => SystemEvent("HMDUnmounted");
-    void OnTrackingAcquired() => SystemEvent("TrackingAcquired");
+    void OnTrackingAcquired() => SystemEvent("TrackingAcquired", true);
     void OnTrackingLost() => SystemEvent("TrackingLost");
     void OnVrFocusAcquired() => SystemEvent("VrFocusAcquired");
     void OnVrFocusLost() => SystemEvent("VrFocusLost");
-    void OnRecentered() => SystemEvent("RecenteredPose");
+    void OnRecentered() => SystemEvent("RecenteredPose", true);
 
-    // Origin-related system events. After one of these the calibration may be stale: re-open it with X+Y and check the rings.
-    void SystemEvent(string name)
+    // System events that can move the tracking origin re-open the calibration, so the operator must check (or redo) it.
+    void SystemEvent(string name, bool originMayChange = false)
     {
         Vector3 head = ts.InverseTransformPoint(eye.position);
         float yaw = Quaternion.LookRotation(ts.InverseTransformDirection(eye.forward)).eulerAngles.y;
-        Debug.LogWarning($"{Tag}{name} | state={state} | head in tracking space ({head.x:F2}, {head.z:F2}) yaw {yaw:F0}");
-        if (state == State.Done)
+        Debug.LogWarning($"{Tag}{name} | state={state} | head in tracking space ({head.x:F2}, {head.z:F2}) yaw {yaw:F0} | {BoundaryInfo()}");
+        if (state != State.Done)
         {
-            TrialEventBus.Report("calib_" + name);
+            return;
         }
+
+        TrialEventBus.Report("calib_" + name);
+        if (originMayChange)
+        {
+            Enter(State.Preview, name + ": tracking origin may have changed, check the yellow rings");
+        }
+    }
+
+    // The Guardian is fixed in the room. If its corners move in tracking space, the tracking origin moved.
+    string BoundaryInfo()
+    {
+        Vector3[] g = OVRManager.boundary.GetGeometry(OVRBoundary.BoundaryType.PlayArea);
+        if (g == null || g.Length == 0)
+        {
+            return "boundary n/a";
+        }
+
+        Vector3 c = Vector3.zero;
+        foreach (Vector3 p in g)
+        {
+            c += p;
+        }
+
+        c /= g.Length;
+        float bearing = Mathf.Atan2(g[0].x - c.x, g[0].z - c.z) * Mathf.Rad2Deg;
+        return $"boundary {g.Length} pts, centroid ({c.x:F2}, {c.z:F2}), corner0 ({g[0].x:F2}, {g[0].z:F2}) bearing {bearing:F1}";
     }
 
     void Update()
@@ -187,7 +213,7 @@ public class RoomCalibration : MonoBehaviour
     {
         if (state != State.Marking)
         {
-            Say("Both points are marked. A = confirm, B = undo, X = restart.");
+            Say("Both points are marked. Right A: confirm, right B: undo, left X: re-mark.");
             return;
         }
 
@@ -203,13 +229,13 @@ public class RoomCalibration : MonoBehaviour
             float expected = Vector2.Distance(targets[0], targets[1]);
             if (Mathf.Abs(measured - expected) > distanceTolerance)
             {
-                Say($"A-B is {measured:F2} m but should be {expected:F2} m (+-{distanceTolerance:F2}). " +
-                    "Mark B again, or undo A.");
+                Say($"The two marks are {measured:F2} m apart, expected {expected:F2} m (+-{distanceTolerance:F2}). " +
+                    $"Mark the {P(1)} again, or undo the {P(0)} (right B).");
                 return;
             }
         }
 
-        string label = marks.Count == 0 ? "A" : "B";
+        string label = P(marks.Count);
         marks.Add(hit);
         Debug.Log($"{Tag}mark {label} at tracking-space ({hit.x:F3}, {hit.z:F3}), ray {rayDistance:F2} m");
 
@@ -236,7 +262,7 @@ public class RoomCalibration : MonoBehaviour
     {
         if (state != State.Preview)
         {
-            Say("Mark both A and B first.");
+            Say("Mark both floor points first.");
             return;
         }
 
@@ -265,6 +291,11 @@ public class RoomCalibration : MonoBehaviour
     // Marking / Preview: passthrough on, scene hidden, only calibration visuals drawn. Done: normal scene.
     void Enter(State next, string reason)
     {
+        if (state == State.Done && next == State.Preview)
+        {
+            marks.Clear(); // old marks live in a tracking space that may no longer exist
+        }
+
         state = next;
         bool calibrating = next != State.Done;
         InProgress = calibrating;
@@ -273,8 +304,11 @@ public class RoomCalibration : MonoBehaviour
         cam.cullingMask = calibrating ? 1 << CalibLayer : savedMask;
         cam.clearFlags = calibrating ? CameraClearFlags.SolidColor : savedFlags;
         cam.backgroundColor = calibrating ? Color.clear : savedColor;
-        Debug.Log($"{Tag}{next} ({reason}); marks={marks.Count}, recording paused={calibrating}");
+        Debug.Log($"{Tag}{next} ({reason}); marks={marks.Count}, recording paused={calibrating} | {BoundaryInfo()}");
     }
+
+    // Operator-facing name of floor point i with its virtual coordinates, e.g. "start point (2, 0.8)".
+    string P(int i) => $"{(i == 0 ? "origin" : "start point")} ({targets[i].x:0.##}, {targets[i].y:0.##})";
 
     void Say(string message)
     {
@@ -298,8 +332,9 @@ public class RoomCalibration : MonoBehaviour
         }
 
         string hint = state == State.Preview
-            ? $"A-B {Vector3.Distance(marks[0], marks[1]):F2} m. Yellow rings must sit on the tape.\nA: confirm   B: undo   X: restart"
-            : $"Aim at floor mark {(marks.Count == 0 ? "A" : "B")} and press TRIGGER ({marks.Count + 1}/2)\nB: undo   X: restart";
+            ? (marks.Count == 2 ? $"Marks are {Vector3.Distance(marks[0], marks[1]):F2} m apart. " : "Tracking may have changed. ")
+                + $"Yellow rings must sit on the marks: {P(0)} and {P(1)}.\nRight A: confirm   Right B: undo   Left X: re-mark"
+            : $"Aim at the floor mark for the {P(marks.Count)} and press the right TRIGGER ({marks.Count + 1}/2)\nRight B: undo   Left X: restart";
         if (Time.time > 5f && !passthroughReady)
         {
             hint += "\nPassthrough is not active (see Console)";
