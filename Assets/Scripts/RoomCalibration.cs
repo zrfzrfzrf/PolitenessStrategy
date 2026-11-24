@@ -6,7 +6,7 @@ using UnityEngine.UI;
 // The operator wears the headset (passthrough on, scene hidden), points the right controller ray at floor mark A
 // (virtual point pointA) and floor mark B (virtual point = the rig's spawn position in the scene), and the rig root
 // is rotated/translated so the two real points land on the two virtual ones.
-// Right hand: TRIGGER mark, B undo, A confirm.  Left hand: X restart marking, X+Y re-open after confirming.
+// Right controller only: TRIGGER mark (in the preview: start over), B undo, A confirm, A+B together re-open after confirming.
 public class RoomCalibration : MonoBehaviour
 {
     public static bool InProgress { get; private set; }
@@ -150,13 +150,13 @@ public class RoomCalibration : MonoBehaviour
             Debug.Log($"{Tag}passthrough initialized={ready} (t={Time.time:F1}s)");
         }
 
-        bool combo = OVRInput.Get(OVRInput.Button.One, OVRInput.Controller.LTouch)
-            && OVRInput.Get(OVRInput.Button.Two, OVRInput.Controller.LTouch);
+        bool combo = OVRInput.Get(OVRInput.Button.One, OVRInput.Controller.RTouch)
+            && OVRInput.Get(OVRInput.Button.Two, OVRInput.Controller.RTouch);
         bool reopen = combo && !comboHeld && state == State.Done;
         comboHeld = combo;
         if (reopen)
         {
-            Enter(State.Preview, "re-opened with X+Y");
+            Enter(State.Preview, "re-opened with right A+B");
             return;
         }
 
@@ -165,20 +165,17 @@ public class RoomCalibration : MonoBehaviour
             return;
         }
 
-        if (OVRInput.GetDown(OVRInput.Button.One, OVRInput.Controller.LTouch))
+        if (!combo) // A+B together only re-opens; it must not also undo or confirm
         {
-            marks.Clear();
-            Enter(State.Marking, "restart");
-        }
+            if (OVRInput.GetDown(OVRInput.Button.Two, OVRInput.Controller.RTouch))
+            {
+                Undo();
+            }
 
-        if (OVRInput.GetDown(OVRInput.Button.Two, OVRInput.Controller.RTouch))
-        {
-            Undo();
-        }
-
-        if (OVRInput.GetDown(OVRInput.Button.One, OVRInput.Controller.RTouch))
-        {
-            Confirm();
+            if (OVRInput.GetDown(OVRInput.Button.One, OVRInput.Controller.RTouch))
+            {
+                Confirm();
+            }
         }
 
         // Ray from the right controller, intersected with the floor (tracking-space y = 0).
@@ -207,10 +204,10 @@ public class RoomCalibration : MonoBehaviour
 
     void Mark(bool hasHit, Vector3 hit, float rayDistance)
     {
-        if (state != State.Marking)
+        if (state == State.Preview) // trigger in the preview starts over
         {
-            Say("Both points are marked. Right A: confirm, right B: undo, left X: re-mark.");
-            return;
+            marks.Clear();
+            Enter(State.Marking, "re-mark");
         }
 
         if (!hasHit)
@@ -269,7 +266,7 @@ public class RoomCalibration : MonoBehaviour
             lastMarks.AddRange(marks);
         }
 
-        Enter(State.Done, "confirmed");
+        Enter(State.Done, "confirmed; right A+B together re-open it");
         TrialEventBus.Report("calib_confirmed");
     }
 
@@ -336,8 +333,10 @@ public class RoomCalibration : MonoBehaviour
 
         string hint = state == State.Preview
             ? (marks.Count == 2 ? $"Marks are {Vector3.Distance(marks[0], marks[1]):F2} m apart. " : "Tracking may have changed. ")
-                + $"Yellow rings must sit on the marks: {P(0)} and {P(1)}.\nRight A: confirm   Right B: undo   Left X: re-mark"
-            : $"Aim at the floor mark for the {P(marks.Count)} and press the right TRIGGER ({marks.Count + 1}/2)\nRight B: undo   Left X: restart";
+                + $"Yellow rings must sit on the marks: {P(0)} and {P(1)}.\nRight A: confirm   "
+                + (marks.Count > 0 ? "Right B: undo   " : "") + "TRIGGER: re-mark"
+            : $"Aim at the floor mark for the {P(marks.Count)} and press the right TRIGGER ({marks.Count + 1}/2)"
+                + (marks.Count > 0 ? "\nRight B: undo" : "");
         if (Time.time > 5f && !passthroughReady)
         {
             hint += "\nPassthrough is not active (see Console)";
