@@ -53,8 +53,6 @@ public class RoomCalibration : MonoBehaviour
         savedMask = cam.cullingMask;
         targets = new[] { pointA, new Vector2(transform.position.x, transform.position.z) };
 
-        // Stage origin is tied to the Guardian and ignores recenters; a Floor Level origin moves when the headset is put back on.
-        OVRManager.instance.trackingOriginType = OVRManager.TrackingOrigin.Stage;
         OVRManager.instance.isInsightPassthroughEnabled = true;
         GameObject layer = new GameObject("CalibrationPassthrough");
         layer.SetActive(false); // set the overlay type before the layer is created in OnEnable
@@ -68,9 +66,9 @@ public class RoomCalibration : MonoBehaviour
             $"A={targets[0]}, B={targets[1]}, expected A-B {Vector2.Distance(targets[0], targets[1]):F3} m, " +
             $"tolerance {distanceTolerance:F2} m, max ray {maxRayDistance:F1} m, " +
             $"passthrough supported={OVRManager.IsInsightPassthroughSupported()}");
-        if (OVRManager.instance.trackingOriginType != OVRManager.TrackingOrigin.Stage)
+        if (OVRManager.instance.trackingOriginType != OVRManager.TrackingOrigin.FloorLevel)
         {
-            Debug.LogWarning($"{Tag}could not switch the tracking origin to Stage (is the headset connected?).");
+            Debug.LogWarning($"{Tag}tracking origin is not FloorLevel; the floor is assumed at tracking-space y=0.");
         }
 
         Enter(State.Marking, "startup");
