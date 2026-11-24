@@ -35,6 +35,7 @@ public class RoomCalibration : MonoBehaviour
     string flash;
     float flashUntil;
     bool comboHeld;
+    bool passthroughReady;
     CameraClearFlags savedFlags;
     Color savedColor;
     int savedMask;
@@ -51,6 +52,8 @@ public class RoomCalibration : MonoBehaviour
         savedMask = cam.cullingMask;
         targets = new[] { pointA, new Vector2(transform.position.x, transform.position.z) };
 
+        // Stage origin is tied to the Guardian and ignores recenters; a Floor Level origin moves when the headset is put back on.
+        OVRManager.instance.trackingOriginType = OVRManager.TrackingOrigin.Stage;
         OVRManager.instance.isInsightPassthroughEnabled = true;
         GameObject layer = new GameObject("CalibrationPassthrough");
         layer.SetActive(false); // set the overlay type before the layer is created in OnEnable
@@ -62,10 +65,11 @@ public class RoomCalibration : MonoBehaviour
         BuildVisuals();
         Debug.Log($"{Tag}ready. tracking origin={OVRManager.instance.trackingOriginType}, " +
             $"A={targets[0]}, B={targets[1]}, expected A-B {Vector2.Distance(targets[0], targets[1]):F3} m, " +
-            $"tolerance {distanceTolerance:F2} m, max ray {maxRayDistance:F1} m");
-        if (OVRManager.instance.trackingOriginType != OVRManager.TrackingOrigin.FloorLevel)
+            $"tolerance {distanceTolerance:F2} m, max ray {maxRayDistance:F1} m, " +
+            $"passthrough supported={OVRManager.IsInsightPassthroughSupported()}");
+        if (OVRManager.instance.trackingOriginType != OVRManager.TrackingOrigin.Stage)
         {
-            Debug.LogWarning($"{Tag}tracking origin is not FloorLevel; the floor is assumed at tracking-space y=0.");
+            Debug.LogWarning($"{Tag}could not switch the tracking origin to Stage (is the headset connected?).");
         }
 
         Enter(State.Marking, "startup");
@@ -117,6 +121,13 @@ public class RoomCalibration : MonoBehaviour
 
     void Update()
     {
+        bool ready = OVRManager.IsInsightPassthroughInitialized();
+        if (ready != passthroughReady)
+        {
+            passthroughReady = ready;
+            Debug.Log($"{Tag}passthrough initialized={ready} (t={Time.time:F1}s)");
+        }
+
         bool combo = OVRInput.Get(OVRInput.Button.One, OVRInput.Controller.LTouch)
             && OVRInput.Get(OVRInput.Button.Two, OVRInput.Controller.LTouch);
         bool reopen = combo && !comboHeld && state == State.Done;
@@ -289,6 +300,11 @@ public class RoomCalibration : MonoBehaviour
         string hint = state == State.Preview
             ? $"A-B {Vector3.Distance(marks[0], marks[1]):F2} m. Yellow rings must sit on the tape.\nA: confirm   B: undo   X: restart"
             : $"Aim at floor mark {(marks.Count == 0 ? "A" : "B")} and press TRIGGER ({marks.Count + 1}/2)\nB: undo   X: restart";
+        if (Time.time > 5f && !passthroughReady)
+        {
+            hint += "\nPassthrough is not active (see Console)";
+        }
+
         hud.text = Time.time < flashUntil ? flash + "\n\n" + hint : hint;
         hudRoot.SetPositionAndRotation(eye.TransformPoint(0f, -0.1f, 1.2f), eye.rotation);
     }
