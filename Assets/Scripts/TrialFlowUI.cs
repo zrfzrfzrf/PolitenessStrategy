@@ -111,8 +111,23 @@ public class TrialFlowUI : MonoBehaviour
         lr.SetPosition(2, leftBack);
     }
 
+    static bool BlockedByCalibration()
+    {
+        if (RoomCalibration.InProgress)
+        {
+            Debug.LogWarning("Finish the room calibration first (confirm with the right A button).");
+        }
+
+        return RoomCalibration.InProgress;
+    }
+
     void OnRestartClicked()
     {
+        if (BlockedByCalibration())
+        {
+            return;
+        }
+
         isStarted = true;
         questionnaire.Close();
         agentController.OnRestartClicked();
@@ -261,6 +276,11 @@ public class TrialFlowUI : MonoBehaviour
 
     void OnNextTrailForced()
     {
+        if (BlockedByCalibration())
+        {
+            return;
+        }
+
         isStarted = true;
         CancelPendingNextTrial();
 

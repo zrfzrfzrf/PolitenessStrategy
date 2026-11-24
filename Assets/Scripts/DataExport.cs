@@ -99,7 +99,7 @@ public class DataExport : MonoBehaviour
             ExportCsv();
         }
 
-        if (!isRecording || target == null)
+        if (!isRecording || target == null || RoomCalibration.InProgress)
         {
             return;
         }
@@ -302,7 +302,7 @@ public class DataExport : MonoBehaviour
 
     void HandleZoneEvent(ZoneEvent zoneEvent)
     {
-        if (!isRecording)
+        if (!isRecording || RoomCalibration.InProgress)
         {
             return;
         }

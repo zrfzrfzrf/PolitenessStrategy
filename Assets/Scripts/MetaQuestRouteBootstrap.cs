@@ -98,6 +98,8 @@ public static class MetaQuestRouteBootstrap
             rigidbody.isKinematic = true;
         }
 
+        vrRig.AddComponent<RoomCalibration>();
+
         Debug.Log($"Meta Quest route tracking configured on {VrRigName}; target is {CenterEyeName}.");
     }
 

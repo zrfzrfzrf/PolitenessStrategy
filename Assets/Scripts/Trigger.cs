@@ -87,7 +87,7 @@ public class Trigger : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        if (!MatchesTagFilter(other))
+        if (RoomCalibration.InProgress || !MatchesTagFilter(other))
         {
             return;
         }
