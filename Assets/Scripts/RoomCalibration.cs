@@ -22,6 +22,7 @@ public class RoomCalibration : MonoBehaviour
     const string Tag = "[RoomCalibration] ";
 
     readonly List<Vector3> marks = new List<Vector3>(); // floor points in tracking space: [0] = A, [1] = B
+    readonly List<Vector3> lastMarks = new List<Vector3>(); // marks of the last confirmed calibration
     readonly LineRenderer[] markRings = new LineRenderer[2];
     readonly LineRenderer[] targetRings = new LineRenderer[2];
     Vector2[] targets; // virtual XZ of A and B
@@ -112,7 +113,7 @@ public class RoomCalibration : MonoBehaviour
     {
         Vector3 head = ts.InverseTransformPoint(eye.position);
         float yaw = Quaternion.LookRotation(ts.InverseTransformDirection(eye.forward)).eulerAngles.y;
-        Debug.LogWarning($"{Tag}{name} | state={state} | head in tracking space ({head.x:F2}, {head.z:F2}) yaw {yaw:F0} | {BoundaryInfo()}");
+        Debug.LogWarning($"{Tag}{name} | state={state} | head in tracking space ({head.x:F2}, {head.z:F2}) yaw {yaw:F0}");
         if (state != State.Done)
         {
             return;
@@ -125,24 +126,19 @@ public class RoomCalibration : MonoBehaviour
         }
     }
 
-    // The Guardian is fixed in the room. If its corners move in tracking space, the tracking origin moved.
-    string BoundaryInfo()
+    // The same two floor marks measured twice: the difference between the two measurements is how far the tracking origin moved.
+    void LogOriginShift()
     {
-        Vector3[] g = OVRManager.boundary.GetGeometry(OVRBoundary.BoundaryType.PlayArea);
-        if (g == null || g.Length == 0)
+        if (lastMarks.Count < 2)
         {
-            return "boundary n/a";
+            return;
         }
 
-        Vector3 c = Vector3.zero;
-        foreach (Vector3 p in g)
-        {
-            c += p;
-        }
-
-        c /= g.Length;
-        float bearing = Mathf.Atan2(g[0].x - c.x, g[0].z - c.z) * Mathf.Rad2Deg;
-        return $"boundary {g.Length} pts, centroid ({c.x:F2}, {c.z:F2}), corner0 ({g[0].x:F2}, {g[0].z:F2}) bearing {bearing:F1}";
+        float yaw = Vector3.SignedAngle(lastMarks[1] - lastMarks[0], marks[1] - marks[0], Vector3.up);
+        Vector3 offset = marks[0] - Quaternion.AngleAxis(yaw, Vector3.up) * lastMarks[0];
+        bool moved = offset.magnitude > 0.05f || Mathf.Abs(yaw) > 1.5f; // above the ~2 cm marking error
+        Debug.LogWarning($"{Tag}tracking origin since the last confirmed calibration: yaw {yaw:F2} deg, " +
+            $"offset ({offset.x:F3}, {offset.z:F3}) m -> {(moved ? "MOVED" : "stable")}");
     }
 
     void Update()
@@ -241,6 +237,7 @@ public class RoomCalibration : MonoBehaviour
 
         if (marks.Count == 2)
         {
+            LogOriginShift();
             Align();
             Enter(State.Preview, "both points marked");
         }
@@ -264,6 +261,12 @@ public class RoomCalibration : MonoBehaviour
         {
             Say("Mark both floor points first.");
             return;
+        }
+
+        if (marks.Count == 2) // confirming a kept alignment without re-marking has no new marks
+        {
+            lastMarks.Clear();
+            lastMarks.AddRange(marks);
         }
 
         Enter(State.Done, "confirmed");
@@ -304,7 +307,7 @@ public class RoomCalibration : MonoBehaviour
         cam.cullingMask = calibrating ? 1 << CalibLayer : savedMask;
         cam.clearFlags = calibrating ? CameraClearFlags.SolidColor : savedFlags;
         cam.backgroundColor = calibrating ? Color.clear : savedColor;
-        Debug.Log($"{Tag}{next} ({reason}); marks={marks.Count}, recording paused={calibrating} | {BoundaryInfo()}");
+        Debug.Log($"{Tag}{next} ({reason}); marks={marks.Count}, recording paused={calibrating}");
     }
 
     // Operator-facing name of floor point i with its virtual coordinates, e.g. "start point (2, 0.8)".
